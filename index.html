@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniFlow AI - Unified Omnichannel Automation & Lead Enrichment</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dark-theme">
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </div>
+                <h2>OmniFlow <span>AI</span></h2>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-tab="analytics">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Analytics Center</span>
+                </button>
+                <button class="nav-item" data-tab="flow-builder">
+                    <i class="fa-solid fa-diagram-project"></i>
+                    <span>Flow Builder</span>
+                </button>
+                <button class="nav-item" data-tab="unified-inbox">
+                    <i class="fa-solid fa-comments"></i>
+                    <span>Unified Inbox</span>
+                    <span class="badge">4</span>
+                </button>
+                <button class="nav-item" data-tab="lead-enrichment">
+                    <i class="fa-solid fa-user-shield"></i>
+                    <span>Lead Enrichment</span>
+                </button>
+                <button class="nav-item" data-tab="feature-comparison">
+                    <i class="fa-solid fa-table-list"></i>
+                    <span>Feature Matrix</span>
+                </button>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="avatar">ML</div>
+                    <div class="user-info">
+                        <h4>Mark Lewis</h4>
+                        <p>Administrator</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="app-header">
+                <div class="search-bar">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" placeholder="Search leads, campaigns, flows...">
+                </div>
+                <div class="header-actions">
+                    <div class="status-indicator">
+                        <span class="pulse-dot"></span>
+                        <span class="status-text">OmniSync Live</span>
+                    </div>
+                    <button class="icon-btn" title="Notifications">
+                        <i class="fa-regular fa-bell"></i>
+                        <span class="dot"></span>
+                    </button>
+                    <button class="icon-btn" id="theme-toggle" title="Toggle Theme">
+                        <i class="fa-regular fa-moon"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Tab Content Pane: Analytics -->
+            <section class="tab-pane active" id="analytics-pane">
+                <div class="pane-header">
+                    <div>
+                        <h1>Analytics Dashboard</h1>
+                        <p>Real-time tracking of message volume, lead identification, and e-commerce conversion rates.</p>
+                    </div>
+                    <div class="time-range">
+                        <button class="btn btn-outline active">7d</button>
+                        <button class="btn btn-outline">30d</button>
+                        <button class="btn btn-outline">All Time</button>
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card glass-card">
+                        <div class="stat-icon purple-glow"><i class="fa-solid fa-paper-plane"></i></div>
+                        <div class="stat-details">
+                            <h3>48,251</h3>
+                            <p>Automated Messages Sent</p>
+                            <span class="trend positive"><i class="fa-solid fa-arrow-up"></i> 14.8% this week</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-card">
+                        <div class="stat-icon blue-glow"><i class="fa-solid fa-user-check"></i></div>
+                        <div class="stat-details">
+                            <h3>1,429</h3>
+                            <p>Anonymous Leads Resolved</p>
+                            <span class="trend positive"><i class="fa-solid fa-arrow-up"></i> 24.3% this week</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-card">
+                        <div class="stat-icon green-glow"><i class="fa-solid fa-cart-shopping"></i></div>
+                        <div class="stat-details">
+                            <h3>$18,490</h3>
+                            <p>Automated DM Revenue</p>
+                            <span class="trend positive"><i class="fa-solid fa-arrow-up"></i> 8.2% this week</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-card">
+                        <div class="stat-icon cyan-glow"><i class="fa-solid fa-circle-check"></i></div>
+                        <div class="stat-details">
+                            <h3>94.8%</h3>
+                            <p>AI Handoff Accuracy</p>
+                            <span class="trend neutral"><i class="fa-solid fa-minus"></i> Stable</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Graphs Section -->
+                <div class="dashboard-grid">
+                    <div class="chart-card glass-card col-span-2">
+                        <div class="card-header">
+                            <h3>Message Volume & Opt-Ins</h3>
+                            <div class="legend">
+                                <span class="legend-item"><span class="dot purple"></span>Sent</span>
+                                <span class="legend-item"><span class="dot green"></span>Opt-ins</span>
+                            </div>
+                        </div>
+                        <div class="mock-chart-container">
+                            <svg viewBox="0 0 500 200" class="svg-chart">
+                                <!-- Grid Lines -->
+                                <line x1="0" y1="50" x2="500" y2="50" stroke="rgba(255,255,255,0.05)" />
+                                <line x1="0" y1="100" x2="500" y2="100" stroke="rgba(255,255,255,0.05)" />
+                                <line x1="0" y1="150" x2="500" y2="150" stroke="rgba(255,255,255,0.05)" />
+                                <!-- Chart 1 Line (Sent) -->
+                                <path d="M 0 150 Q 100 120 180 80 T 350 110 T 500 40" fill="none" stroke="var(--purple)" stroke-width="3" class="chart-path" />
+                                <!-- Chart 2 Line (Opt-ins) -->
+                                <path d="M 0 180 Q 120 160 200 130 T 380 150 T 500 100" fill="none" stroke="var(--green)" stroke-width="3" class="chart-path" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="chart-card glass-card">
+                        <div class="card-header">
+                            <h3>Channel Share</h3>
+                        </div>
+                        <div class="donut-chart-container">
+                            <div class="donut-chart">
+                                <div class="donut-text">
+                                    <h4>Instagram</h4>
+                                    <p>54%</p>
+                                </div>
+                            </div>
+                            <div class="donut-legend">
+                                <div class="legend-row"><span class="dot-small purple"></span> Instagram (54%)</div>
+                                <div class="legend-row"><span class="dot-small green"></span> WhatsApp (28%)</div>
+                                <div class="legend-row"><span class="dot-small cyan"></span> Facebook (12%)</div>
+                                <div class="legend-row"><span class="dot-small yellow"></span> SMS (6%)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab Content Pane: Flow Builder -->
+            <section class="tab-pane" id="flow-builder-pane">
+                <div class="pane-header">
+                    <div>
+                        <h1>Visual Flow Builder</h1>
+                        <p>Construct complex marketing automation sequences with triggers, AI conditionals, and multi-channel delivery.</p>
+                    </div>
+                    <div class="pane-actions">
+                        <button class="btn btn-outline" id="btn-add-node"><i class="fa-solid fa-plus"></i> Add Step</button>
+                        <button class="btn btn-primary" id="btn-save-flow"><i class="fa-solid fa-floppy-disk"></i> Deploy Flow</button>
+                    </div>
+                </div>
+
+                <!-- Canvas Grid Layout -->
+                <div class="builder-canvas glass-card">
+                    <!-- Toolbox Panel -->
+                    <div class="canvas-toolbox">
+                        <h4>Triggers</h4>
+                        <div class="tool-item" draggable="true" data-type="trigger-comment"><i class="fa-solid fa-comment-dots"></i> Instagram Comment</div>
+                        <div class="tool-item" draggable="true" data-type="trigger-story"><i class="fa-solid fa-circle-notch"></i> Story Mention</div>
+                        <div class="tool-item" draggable="true" data-type="trigger-keyword"><i class="fa-solid fa-key"></i> DM Keyword</div>
+                        
+                        <h4>Actions</h4>
+                        <div class="tool-item" draggable="true" data-type="action-dm"><i class="fa-solid fa-paper-plane"></i> Send social DM</div>
+                        <div class="tool-item" draggable="true" data-type="action-sms"><i class="fa-solid fa-sms"></i> Send SMS</div>
+                        <div class="tool-item" draggable="true" data-type="action-email"><i class="fa-solid fa-envelope"></i> Send Email</div>
+                        
+                        <h4>Logic & AI</h4>
+                        <div class="tool-item" draggable="true" data-type="ai-response"><i class="fa-solid fa-brain"></i> AI Agent Reply</div>
+                        <div class="tool-item" draggable="true" data-type="enrich-lead"><i class="fa-solid fa-user-plus"></i> Enrich Identity</div>
+                    </div>
+
+                    <!-- Flow Workspace Grid -->
+                    <div class="canvas-workspace" id="canvas-area">
+                        <!-- Node 1: Trigger -->
+                        <div class="flow-node trigger-node" id="node-1" style="top: 80px; left: 50px;">
+                            <div class="node-header"><i class="fa-solid fa-comment-dots"></i> Instagram Comment Trigger</div>
+                            <div class="node-body">
+                                <p>If post comment contains: <strong>"YES"</strong></p>
+                            </div>
+                            <div class="connector connector-out"></div>
+                        </div>
+
+                        <!-- Node 2: Enrich -->
+                        <div class="flow-node logic-node" id="node-2" style="top: 80px; left: 320px;">
+                            <div class="node-header"><i class="fa-solid fa-user-plus"></i> Customers.ai Enrichment</div>
+                            <div class="node-body">
+                                <p>Identify anonymous profile and fetch email/phone numbers.</p>
+                            </div>
+                            <div class="connector connector-in"></div>
+                            <div class="connector connector-out"></div>
+                        </div>
+
+                        <!-- Node 3: AI Assistant -->
+                        <div class="flow-node ai-node" id="node-3" style="top: 80px; left: 590px;">
+                            <div class="node-header"><i class="fa-solid fa-brain"></i> Lyro AI Agent</div>
+                            <div class="node-body">
+                                <p>Generate custom checkout link for <strong>"MML Growth Book"</strong>.</p>
+                            </div>
+                            <div class="connector connector-in"></div>
+                            <div class="connector connector-out-yes"></div>
+                            <div class="connector connector-out-no" style="top: 70%;"></div>
+                        </div>
+
+                        <!-- Node 4: Send DM -->
+                        <div class="flow-node action-node" id="node-4" style="top: 40px; left: 860px;">
+                            <div class="node-header"><i class="fa-solid fa-paper-plane"></i> Instagram DM Out</div>
+                            <div class="node-body">
+                                <p>Send checkout link to user: <em>"Hey! Click here..."</em></p>
+                            </div>
+                            <div class="connector connector-in"></div>
+                        </div>
+
+                        <!-- Node 5: Send SMS -->
+                        <div class="flow-node action-node" id="node-5" style="top: 220px; left: 860px;">
+                            <div class="node-header"><i class="fa-solid fa-sms"></i> SMS Out (Fallback)</div>
+                            <div class="node-body">
+                                <p>If email/phone enriched: Send discount SMS code.</p>
+                            </div>
+                            <div class="connector connector-in"></div>
+                        </div>
+
+                        <!-- SVG Connectors Canvas -->
+                        <svg class="canvas-connections">
+                            <path d="M 230 130 L 320 130" stroke="rgba(255,255,255,0.2)" stroke-width="2" fill="none" />
+                            <path d="M 500 130 L 590 130" stroke="rgba(255,255,255,0.2)" stroke-width="2" fill="none" />
+                            <path d="M 770 115 L 860 90" stroke="rgba(255,255,255,0.2)" stroke-width="2" fill="none" />
+                            <path d="M 770 145 L 810 145 L 810 270 L 860 270" stroke="rgba(255,255,255,0.2)" stroke-width="2" fill="none" />
+                        </svg>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab Content Pane: Unified Inbox -->
+            <section class="tab-pane" id="unified-inbox-pane">
+                <div class="pane-header">
+                    <div>
+                        <h1>Unified Team Inbox</h1>
+                        <p>Manage all customer dialogues from Instagram DMs, WhatsApp, SMS, and Web Chat in one unified team dashboard.</p>
+                    </div>
+                </div>
+
+                <!-- Inbox Layout Grid -->
+                <div class="inbox-container glass-card">
+                    <!-- Conversations List -->
+                    <div class="conversation-list">
+                        <div class="list-search">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" placeholder="Filter conversations...">
+                        </div>
+                        <div class="chats-scroller">
+                            <div class="chat-item active" data-id="chat-1">
+                                <div class="chat-item-header">
+                                    <div class="chat-meta">
+                                        <div class="platform-badge ig"><i class="fa-brands fa-instagram"></i></div>
+                                        <span class="chat-name">johndoe_creative</span>
+                                    </div>
+                                    <span class="time">12m</span>
+                                </div>
+                                <p class="last-msg">Commented "YES" on post #4. Enriched.</p>
+                                <span class="tag tag-enriched">Enriched</span>
+                            </div>
+                            <div class="chat-item" data-id="chat-2">
+                                <div class="chat-item-header">
+                                    <div class="chat-meta">
+                                        <div class="platform-badge wa"><i class="fa-brands fa-whatsapp"></i></div>
+                                        <span class="chat-name">+1 (555) 381-9921</span>
+                                    </div>
+                                    <span class="time">1h</span>
+                                </div>
+                                <p class="last-msg">What are the pricing options for the package?</p>
+                                <span class="tag tag-ai">AI Handled</span>
+                            </div>
+                            <div class="chat-item" data-id="chat-3">
+                                <div class="chat-item-header">
+                                    <div class="chat-meta">
+                                        <div class="platform-badge sms"><i class="fa-solid fa-sms"></i></div>
+                                        <span class="chat-name">+1 (310) 902-1244</span>
+                                    </div>
+                                    <span class="time">4h</span>
+                                </div>
+                                <p class="last-msg">Sent discount code confirmation.</p>
+                                <span class="tag tag-converted">Converted</span>
+                            </div>
+                            <div class="chat-item" data-id="chat-4">
+                                <div class="chat-item-header">
+                                    <div class="chat-meta">
+                                        <div class="platform-badge web"><i class="fa-solid fa-globe"></i></div>
+                                        <span class="chat-name">Sarah Jenkins (Web)</span>
+                                    </div>
+                                    <span class="time">1d</span>
+                                </div>
+                                <p class="last-msg">Thank you, that solved my issue!</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Window Area -->
+                    <div class="chat-window">
+                        <div class="chat-window-header">
+                            <div class="user-meta">
+                                <div class="avatar-large">JD</div>
+                                <div>
+                                    <h3>johndoe_creative</h3>
+                                    <p>Active 12m ago via Instagram Direct</p>
+                                </div>
+                            </div>
+                            <div class="inbox-controls">
+                                <button class="btn btn-outline" id="toggle-ai"><i class="fa-solid fa-robot"></i> Pause AI Agent</button>
+                                <button class="btn btn-danger"><i class="fa-solid fa-user-xmark"></i> Close Ticket</button>
+                            </div>
+                        </div>
+
+                        <!-- Chat Messages Scroller -->
+                        <div class="messages-area" id="messages-container">
+                            <div class="msg-group incoming">
+                                <div class="msg-bubble">
+                                    <p>YES</p>
+                                    <span class="msg-time">09:12 AM</span>
+                                </div>
+                            </div>
+                            <div class="msg-group system">
+                                <div class="system-notification">
+                                    <i class="fa-solid fa-shield-halved"></i> Customers.ai resolved profile: <strong>John Doe</strong> (john.doe@gmail.com, +1-415-382-9021)
+                                </div>
+                            </div>
+                            <div class="msg-group outgoing ai-agent">
+                                <div class="msg-bubble">
+                                    <p>Hey John! Great to connect with you. I see you're interested in the MML Growth Book. Click here to check out: <a href="#">mml-checkout.com/growth-book</a>. We also sent a discount code to your phone number +1-415-382-9021!</p>
+                                    <span class="msg-time">09:12 AM <span class="ai-tag">AI Agent</span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Message Input Panel -->
+                        <div class="message-input-area">
+                            <button class="attach-btn"><i class="fa-solid fa-paperclip"></i></button>
+                            <input type="text" placeholder="Type a message (AI is currently handling)..." id="chat-input">
+                            <button class="send-btn" id="send-chat-btn"><i class="fa-solid fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Profile & Lead Enrichment Panel (Right) -->
+                    <div class="profile-panel">
+                        <h3>Customer Profile</h3>
+                        <div class="profile-summary">
+                            <div class="avatar-huge">JD</div>
+                            <h4>John Doe</h4>
+                            <p>@johndoe_creative</p>
+                        </div>
+
+                        <div class="enrichment-data">
+                            <h4><i class="fa-solid fa-user-shield"></i> Identity Enrichment</h4>
+                            <div class="data-row">
+                                <span class="label">Full Name</span>
+                                <span class="val">John Doe</span>
+                            </div>
+                            <div class="data-row">
+                                <span class="label">Enriched Email</span>
+                                <span class="val clickable">john.doe@gmail.com</span>
+                            </div>
+                            <div class="data-row">
+                                <span class="label">Enriched Phone</span>
+                                <span class="val clickable">+1 (415) 382-9021</span>
+                            </div>
+                            <div class="data-row">
+                                <span class="label">Location</span>
+                                <span class="val">San Francisco, CA</span>
+                            </div>
+                            <div class="data-row">
+                                <span class="label">Resolution Match</span>
+                                <span class="val match-high">98% (High)</span>
+                            </div>
+                        </div>
+
+                        <div class="tags-section">
+                            <h4>Tags</h4>
+                            <div class="tag-cloud">
+                                <span class="tag-pill">Instagram Lead</span>
+                                <span class="tag-pill">E-commerce Quiz</span>
+                                <span class="tag-pill">Enriched</span>
+                                <span class="tag-pill">+ Add Tag</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab Content Pane: Lead Enrichment -->
+            <section class="tab-pane" id="lead-enrichment-pane">
+                <div class="pane-header">
+                    <div>
+                        <h1>Lead Identity Resolution Panel</h1>
+                        <p>Track visitors identified through social messaging, landing page tracking, and cross-channel database matching.</p>
+                    </div>
+                    <button class="btn btn-primary" id="btn-export-leads"><i class="fa-solid fa-file-export"></i> Export CSV</button>
+                </div>
+
+                <!-- Leads Table -->
+                <div class="leads-table-container glass-card">
+                    <table class="leads-table">
+                        <thead>
+                            <tr>
+                                <th>Social Profile</th>
+                                <th>Resolved Name</th>
+                                <th>Enriched Email</th>
+                                <th>Enriched Phone</th>
+                                <th>Platform Source</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leads-table-body">
+                            <tr>
+                                <td>
+                                    <div class="social-cell">
+                                        <i class="fa-brands fa-instagram"></i>
+                                        <span>@johndoe_creative</span>
+                                    </div>
+                                </td>
+                                <td>John Doe</td>
+                                <td>john.doe@gmail.com</td>
+                                <td>+1 (415) 382-9021</td>
+                                <td>Instagram Ad</td>
+                                <td><span class="badge badge-success">Enriched</span></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="social-cell">
+                                        <i class="fa-brands fa-whatsapp"></i>
+                                        <span>+1 (555) 381-9921</span>
+                                    </div>
+                                </td>
+                                <td>Sarah Jenkins</td>
+                                <td>s.jenkins@outlook.com</td>
+                                <td>+1 (555) 381-9921</td>
+                                <td>WhatsApp Campaign</td>
+                                <td><span class="badge badge-success">Enriched</span></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="social-cell">
+                                        <i class="fa-brands fa-instagram"></i>
+                                        <span>@alex_style23</span>
+                                    </div>
+                                </td>
+                                <td>Alex Rivera</td>
+                                <td>alex.rivera@gmail.com</td>
+                                <td>+1 (310) 902-1244</td>
+                                <td>Reel Comment</td>
+                                <td><span class="badge badge-success">Enriched</span></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="social-cell">
+                                        <i class="fa-brands fa-facebook-messenger"></i>
+                                        <span>@mike_fitpro</span>
+                                    </div>
+                                </td>
+                                <td>Mike Carson</td>
+                                <td>mike.pro@fitcorp.com</td>
+                                <td>+1 (925) 389-1022</td>
+                                <td>Facebook Ad</td>
+                                <td><span class="badge badge-success">Enriched</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Tab Content Pane: Feature Comparison Matrix -->
+            <section class="tab-pane" id="feature-comparison-pane">
+                <div class="pane-header">
+                    <div>
+                        <h1>Competitor Analysis & Feature Integration Matrix</h1>
+                        <p>Visual map of chatbot automation applications, their functional classes, and our unified platform coverage.</p>
+                    </div>
+                </div>
+
+                <!-- Analysis Cards Grid -->
+                <div class="analysis-summary-grid">
+                    <div class="summary-card glass-card">
+                        <h3>What is ManyChat?</h3>
+                        <p>ManyChat is the market-leader in **Conversational Marketing Platforms (Chatbot Automation)**. It focuses on drag-and-drop conversational flows, trigger words, commenting campaigns, and social DMs (Instagram, Facebook Messenger, WhatsApp, SMS).</p>
+                    </div>
+                    <div class="summary-card glass-card">
+                        <h3>App Classification</h3>
+                        <p>This class of apps is called **Chatbot Builders / Messaging Automation Software**. They specialize in visual conditional workflows, lead capturing, and automated sales conversations within native instant messenger systems.</p>
+                    </div>
+                    <div class="summary-card glass-card">
+                        <h3>Our Integrated Value</h3>
+                        <p><strong>OmniFlow AI</strong> integrates the visual ease of **ManyChat**, the visitor identification/identity enrichment of **Customers.ai**, the shared WhatsApp team inbox of **WATI**, and the e-commerce customer support AI bots of **Tidio** into a single dashboard.</p>
+                    </div>
+                </div>
+
+                <!-- Comparison Table -->
+                <div class="leads-table-container glass-card">
+                    <table class="leads-table">
+                        <thead>
+                            <tr>
+                                <th>Feature / Core Asset</th>
+                                <th>ManyChat</th>
+                                <th>Customers.ai</th>
+                                <th>Tidio</th>
+                                <th>WATI</th>
+                                <th>OmniFlow AI (Design)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Visual Flow Builder</strong></td>
+                                <td><span class="icon-y"><i class="fa-solid fa-circle-check"></i> Excellent</span></td>
+                                <td><span class="icon-y"><i class="fa-solid fa-circle-check"></i> Basic</span></td>
+                                <td><span class="icon-n"><i class="fa-solid fa-circle-xmark"></i> Limited</span></td>
+                                <td><span class="icon-n"><i class="fa-solid fa-circle-xmark"></i> Limited</span></td>
+                                <td><span class="icon-g"><i class="fa-solid fa-star"></i> Advanced Flow</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Identity Resolution / Lead Enrichment</strong></td>
+                                <td><span class="icon-n"><i class="fa-solid fa-circle-xmark"></i> No</span></td>
+                                <td><span class="icon-y"><i class="fa-solid fa-circle-check"></i> Primary focus</span></td>
+                                <td><span class="icon-n"><i class="fa-solid fa-circle-xmark"></i> No</span></td>
+                                <td><span class="icon-n"><i class="fa-solid fa-circle-xmark"></i> No</span></td>
+                                <td><span class="icon-g"><i class="fa-solid fa-star"></i> Built-in Enrichment</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Universal Multi-Channel Social Inbox</strong></td>
+                                <td><span class="icon-y"><i class="fa-solid fa-circle-check"></i> Yes</span></td>
+                                <td><span class="icon-y"><i class="fa-solid fa-circle-check"></i> Yes</span></td>
+                                <td><span class="icon-y"><i class="fa-solid fa-circle-check"></i> Live Widget Focus</span></td>
+                                <td><span class="icon-n"><i class="fa-solid fa-circle-xmark"></i> WhatsApp Only</span></td>
+                                <td><span class="icon-g"><i class="fa-solid fa-star"></i> Shared Team Inbox</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>AI Handoff & Customer Care</strong></td>
+                                <td><span class="icon-n"><i class="fa-solid fa-circle-xmark"></i> Basic FAQs</span></td>
+                                <td><span class="icon-n"><i class="fa-solid fa-circle-xmark"></i> Basic FAQs</span></td>
+                                <td><span class="icon-y"><i class="fa-solid fa-circle-check"></i> Lyro AI Agent</span></td>
+                                <td><span class="icon-n"><i class="fa-solid fa-circle-xmark"></i> Basic FAQs</span></td>
+                                <td><span class="icon-g"><i class="fa-solid fa-star"></i> Fully Integrated AI Agent</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>WhatsApp Team Broadcast</strong></td>
+                                <td><span class="icon-y"><i class="fa-solid fa-circle-check"></i> Basic</span></td>
+                                <td><span class="icon-n"><i class="fa-solid fa-circle-xmark"></i> No</span></td>
+                                <td><span class="icon-n"><i class="fa-solid fa-circle-xmark"></i> No</span></td>
+                                <td><span class="icon-y"><i class="fa-solid fa-circle-check"></i> Advanced</span></td>
+                                <td><span class="icon-g"><i class="fa-solid fa-star"></i> Native Broadcasting</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
