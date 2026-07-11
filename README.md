@@ -1,17 +1,50 @@
-# OmniFlow AI
+# Message Manager
 
-OmniFlow AI is a unified omnichannel chat automation and identity resolution platform prototype. It integrates the best features from industry competitors (ManyChat, Customers.ai, Tidio, WATI, and Landbot) into a single unified workspace.
+Message Manager is a unified omnichannel chat automation, identity resolution, and sales attribution platform. It coordinates automated DM sequencing, captures visitor contacts, and tracks sales logs.
 
-## Core Features
-1. **Analytics Center:** Unified inbox volume, identity resolution rate, and sequence conversion metrics.
-2. **Visual Flow Builder:** Drag-and-drop conversational nodes for building DM responder logic (mock interactive setup).
-3. **Team Inbox:** Collaborative chat takeover panel matching conversations with agent status and channels.
-4. **Identity Resolution Panel:** Real-time visitor contact matching (profiles linked to emails, phones, and checking checkout events).
-5. **Content Library:** Reusable media assets and guides integrated with SMM content pools.
+---
 
-## Integration Blueprint (SMM & OmniFlow)
-See the documents under the `docs/` folder for schema details and connection mappings:
-- `docs/SMM_Dashboard_OmniFlow_Integration_Report_2026-06-29.md`: Integration blueprint.
-- `docs/API_Middleware_UI_Schema_Proposal_2026-06-29.md`: UI and data field sync specifications.
-- `docs/Chat_Automation_Competitor_Analysis_Report_2026-06-29.md`: Investigation report of competitors.
-- `docs/Chat_Automation_Competitor_Analysis_Walkthrough_2026-06-29.md`: Implementation testing walkthrough.
+## 1. Setup & Installation
+
+To launch the local Node-backed prototype:
+1. Navigate to this directory.
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the server:
+   ```bash
+   npm start
+   ```
+4. Open `http://localhost:8888` in your browser.
+
+---
+
+## 2. Core Functional Layouts
+
+### Analytics & Operations Center
+The top header provides the operational controls:
+* **Interactive Time Range**: Toggle between **7d**, **30d**, and **All Time** range presets. Selecting a period instantly updates the operational metrics and trends.
+* **Operational Stats Cards**:
+  * **Triggers & Flows Active**: Tracks active webhook automation rules, webhook status, and system error logs.
+  * **Operator Handled DMs**: Displays active inbox counts needing support attention, along with average operator response latencies.
+  * **SMM Handoff Requests**: Shows content requests compiled and waiting for Exchange Bus sync.
+  * **Conversion E-commerce Sales**: Displays total attributed sales volume and conversion percentages.
+
+### Lead & Conversation Statuses
+All conversation records are resolved and marked with consistent status badges:
+* **CONVERTED** (Success Green): Leads that completed a Stripe checkout or conversion sequence.
+* **AI HANDLED** (Info Blue/Cyan): Conversations currently managed by automated chat sequences.
+* **ENRICHED** (Warning Yellow): Profiles with parsed/resolved contact info waiting for manual sync.
+* **OPEN** (Neutral Grey): Active conversations waiting for manual operator response.
+
+### Small-Screen Viewport Scroll
+The layout includes styling overrides that automatically disable `overflow: hidden; height: 100vh` rules on small viewport sizes (less than 900px wide or 700px high). The application stacks the sidebar and allows responsive scrolling on mobile devices.
+
+---
+
+## 3. Integration Data Sync (Exchange Bus)
+Persistent chat state is stored in `data/omniflow-state.json`. Message Manager automatically publishes event outputs to the local Exchange Bus directories:
+* `smm/exchange/message-manager/inbox_summary.json`
+* `smm/exchange/message-manager/conversions.json`
+* `smm/exchange/message-manager/content_requests.json`

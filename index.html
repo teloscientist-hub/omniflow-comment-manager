@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OmniFlow AI - Unified Omnichannel Automation & Lead Enrichment</title>
+    <title>Message Manager - Unified Omnichannel Automation & Lead Enrichment</title>
+    <link rel="icon" href="assets/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,9 +22,9 @@
         <aside class="sidebar">
             <div class="logo-area">
                 <div class="logo-icon">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <img src="assets/message-manager-icon.png" alt="">
                 </div>
-                <h2>OmniFlow <span>AI</span></h2>
+                <h2>Message <span>Manager</span></h2>
             </div>
             
             <nav class="sidebar-nav">
@@ -69,7 +73,7 @@
                 <div class="header-actions">
                     <div class="status-indicator">
                         <span class="pulse-dot"></span>
-                        <span class="status-text">OmniSync Live</span>
+                        <span class="status-text">Message Manager Live</span>
                     </div>
                     <button class="icon-btn" title="Notifications">
                         <i class="fa-regular fa-bell"></i>
@@ -80,6 +84,8 @@
                     </button>
                 </div>
             </header>
+
+            <div class="action-status" id="actionStatus" aria-live="polite" hidden></div>
 
             <!-- Tab Content Pane: Analytics -->
             <section class="tab-pane active" id="analytics-pane">
@@ -95,41 +101,10 @@
                     </div>
                 </div>
 
+                <section class="operations-status glass-card" id="operationsStatus" aria-live="polite"></section>
+
                 <!-- Stats Grid -->
-                <div class="stats-grid">
-                    <div class="stat-card glass-card">
-                        <div class="stat-icon purple-glow"><i class="fa-solid fa-paper-plane"></i></div>
-                        <div class="stat-details">
-                            <h3>48,251</h3>
-                            <p>Automated Messages Sent</p>
-                            <span class="trend positive"><i class="fa-solid fa-arrow-up"></i> 14.8% this week</span>
-                        </div>
-                    </div>
-                    <div class="stat-card glass-card">
-                        <div class="stat-icon blue-glow"><i class="fa-solid fa-user-check"></i></div>
-                        <div class="stat-details">
-                            <h3>1,429</h3>
-                            <p>Anonymous Leads Resolved</p>
-                            <span class="trend positive"><i class="fa-solid fa-arrow-up"></i> 24.3% this week</span>
-                        </div>
-                    </div>
-                    <div class="stat-card glass-card">
-                        <div class="stat-icon green-glow"><i class="fa-solid fa-cart-shopping"></i></div>
-                        <div class="stat-details">
-                            <h3>$18,490</h3>
-                            <p>Automated DM Revenue</p>
-                            <span class="trend positive"><i class="fa-solid fa-arrow-up"></i> 8.2% this week</span>
-                        </div>
-                    </div>
-                    <div class="stat-card glass-card">
-                        <div class="stat-icon cyan-glow"><i class="fa-solid fa-circle-check"></i></div>
-                        <div class="stat-details">
-                            <h3>94.8%</h3>
-                            <p>AI Handoff Accuracy</p>
-                            <span class="trend neutral"><i class="fa-solid fa-minus"></i> Stable</span>
-                        </div>
-                    </div>
-                </div>
+                <div class="stats-grid" id="statsGrid"></div>
 
                 <!-- Graphs Section -->
                 <div class="dashboard-grid">
@@ -344,6 +319,10 @@
                                 </div>
                             </div>
                             <div class="inbox-controls">
+                                <input class="action-input" id="content-topic-input" type="text" value="TikTok Hook Formulas" aria-label="Content request topic">
+                                <input class="action-input amount-input" id="conversion-amount-input" type="number" min="0" step="1" value="97" aria-label="Conversion amount">
+                                <button class="btn btn-outline" id="log-content-request"><i class="fa-solid fa-lightbulb"></i> Log Content Request</button>
+                                <button class="btn btn-outline" id="record-conversion"><i class="fa-solid fa-dollar-sign"></i> Record Sale</button>
                                 <button class="btn btn-outline" id="toggle-ai"><i class="fa-solid fa-robot"></i> Pause AI Agent</button>
                                 <button class="btn btn-danger"><i class="fa-solid fa-user-xmark"></i> Close Ticket</button>
                             </div>
@@ -411,6 +390,30 @@
                             </div>
                         </div>
 
+                        <div class="enrichment-data attribution-data">
+                            <h4><i class="fa-solid fa-bolt"></i> SMM Attribution</h4>
+                            <div class="data-row">
+                                <span class="label">Origin Post</span>
+                                <span class="val" id="origin-post-val">ig_post_demo_004</span>
+                            </div>
+                            <div class="data-row">
+                                <span class="label">Source ID</span>
+                                <span class="val" id="origin-source-val">youtube-demo-growth-strategy</span>
+                            </div>
+                            <div class="data-row">
+                                <span class="label">Trigger</span>
+                                <span class="val" id="trigger-keyword-val">YES</span>
+                            </div>
+                            <div class="data-row">
+                                <span class="label">Flow</span>
+                                <span class="val" id="flow-name-val">MML Growth Book Flow</span>
+                            </div>
+                            <div class="data-row">
+                                <span class="label">Revenue</span>
+                                <span class="val match-high" id="revenue-val">$97</span>
+                            </div>
+                        </div>
+
                         <div class="tags-section">
                             <h4>Tags</h4>
                             <div class="tag-cloud">
@@ -431,8 +434,13 @@
                         <h1>Lead Identity Resolution Panel</h1>
                         <p>Track visitors identified through social messaging, landing page tracking, and cross-channel database matching.</p>
                     </div>
-                    <button class="btn btn-primary" id="btn-export-leads"><i class="fa-solid fa-file-export"></i> Export CSV</button>
+                    <div class="pane-actions">
+                        <button class="btn btn-outline" id="btn-export-smm"><i class="fa-solid fa-share-nodes"></i> Export to SMM</button>
+                        <button class="btn btn-primary" id="btn-export-leads"><i class="fa-solid fa-file-export"></i> Export CSV</button>
+                    </div>
                 </div>
+
+                <section class="handoff-status glass-card" id="handoffStatus" aria-live="polite"></section>
 
                 <!-- Leads Table -->
                 <div class="leads-table-container glass-card">
@@ -444,6 +452,9 @@
                                 <th>Enriched Email</th>
                                 <th>Enriched Phone</th>
                                 <th>Platform Source</th>
+                                <th>Origin Source</th>
+                                <th>Flow</th>
+                                <th>Revenue</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
@@ -526,7 +537,7 @@
                     </div>
                     <div class="summary-card glass-card">
                         <h3>Our Integrated Value</h3>
-                        <p><strong>OmniFlow AI</strong> integrates the visual ease of **ManyChat**, the visitor identification/identity enrichment of **Customers.ai**, the shared WhatsApp team inbox of **WATI**, and the e-commerce customer support AI bots of **Tidio** into a single dashboard.</p>
+                        <p><strong>Message Manager</strong> integrates the visual ease of **ManyChat**, the visitor identification/identity enrichment of **Customers.ai**, the shared WhatsApp team inbox of **WATI**, and the e-commerce customer support AI bots of **Tidio** into a single dashboard.</p>
                     </div>
                 </div>
 
@@ -540,7 +551,7 @@
                                 <th>Customers.ai</th>
                                 <th>Tidio</th>
                                 <th>WATI</th>
-                                <th>OmniFlow AI (Design)</th>
+                                <th>Message Manager (Design)</th>
                             </tr>
                         </thead>
                         <tbody>

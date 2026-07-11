@@ -1,0 +1,230 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-06-30T00:00:00.000Z",
+  "flows": [
+    {
+      "id": "flow_mml_growth_book_v2",
+      "name": "MML Growth Book Flow",
+      "default_trigger_keyword": "GROWTH",
+      "status": "draft"
+    },
+    {
+      "id": "flow_lead_magnet_checklist",
+      "name": "Free PDF Checklist Flow",
+      "default_trigger_keyword": "CHECKLIST",
+      "status": "draft"
+    },
+    {
+      "id": "flow_human_takeover_support",
+      "name": "Human Takeover Support Flow",
+      "default_trigger_keyword": "HELP",
+      "status": "draft"
+    }
+  ],
+  "triggers": [],
+  "conversations": [
+    {
+      "id": "chat-1",
+      "name": "johndoe_creative",
+      "platform": "Instagram Direct",
+      "channel": "instagram",
+      "avatar": "JD",
+      "fullName": "John Doe",
+      "email": "john.doe@gmail.com",
+      "phone": "+1 (415) 382-9021",
+      "location": "San Francisco, CA",
+      "match": "98% (High)",
+      "matchClass": "match-high",
+      "status": "enriched",
+      "lastActivity": "12m",
+      "tags": [
+        "Instagram Lead",
+        "E-commerce Quiz",
+        "Enriched"
+      ],
+      "attribution": {
+        "origin_post_id": "ig_post_demo_004",
+        "origin_source_id": "youtube-demo-growth-strategy",
+        "trigger_keyword": "YES",
+        "flow_id": "flow_mml_growth_book_v2",
+        "flow_name": "MML Growth Book Flow",
+        "revenue_usd": 97
+      },
+      "messages": [
+        {
+          "type": "incoming",
+          "text": "YES",
+          "time": "09:12 AM"
+        },
+        {
+          "type": "system",
+          "text": "Customers.ai resolved profile: John Doe (john.doe@gmail.com, +1-415-382-9021)"
+        },
+        {
+          "type": "outgoing",
+          "text": "Hey John! Great to connect with you. I see you're interested in the MML Growth Book. Click here to check out: mml-checkout.com/growth-book. We also sent a discount code to your phone number +1-415-382-9021!",
+          "time": "09:12 AM",
+          "isAI": true
+        }
+      ]
+    },
+    {
+      "id": "chat-2",
+      "name": "+1 (555) 381-9921",
+      "platform": "WhatsApp Business",
+      "channel": "whatsapp",
+      "avatar": "SJ",
+      "fullName": "Sarah Jenkins",
+      "email": "s.jenkins@outlook.com",
+      "phone": "+1 (555) 381-9921",
+      "location": "New York, NY",
+      "match": "95% (High)",
+      "matchClass": "match-high",
+      "status": "ai",
+      "lastActivity": "1h",
+      "tags": [
+        "WhatsApp Lead",
+        "Broadcasting",
+        "Enriched"
+      ],
+      "attribution": {
+        "origin_post_id": null,
+        "origin_source_id": null,
+        "trigger_keyword": "CHECKLIST",
+        "flow_id": "flow_lead_magnet_checklist",
+        "flow_name": "Free PDF Checklist Flow",
+        "revenue_usd": 0
+      },
+      "messages": [
+        {
+          "type": "incoming",
+          "text": "Hey, I saw your broadcast about the SMM strategies checklist.",
+          "time": "10:04 AM"
+        },
+        {
+          "type": "outgoing",
+          "text": "Hi Sarah! That's right, the checklist is fully updated for 2026. What are the pricing options for the package?",
+          "time": "10:05 AM",
+          "isAI": true
+        },
+        {
+          "type": "incoming",
+          "text": "What are the pricing options for the package?",
+          "time": "10:06 AM"
+        }
+      ]
+    },
+    {
+      "id": "chat-3",
+      "name": "+1 (310) 902-1244",
+      "platform": "SMS Messaging",
+      "channel": "sms",
+      "avatar": "AR",
+      "fullName": "Alex Rivera",
+      "email": "alex.rivera@gmail.com",
+      "phone": "+1 (310) 902-1244",
+      "location": "Los Angeles, CA",
+      "match": "91% (High)",
+      "matchClass": "match-high",
+      "status": "converted",
+      "lastActivity": "4h",
+      "tags": [
+        "SMS Lead",
+        "Promo Code",
+        "Converted"
+      ],
+      "attribution": {
+        "origin_post_id": null,
+        "origin_source_id": null,
+        "trigger_keyword": "MML20",
+        "flow_id": "flow_mml_growth_book_v2",
+        "flow_name": "MML Growth Book Flow",
+        "revenue_usd": 97
+      },
+      "messages": [
+        {
+          "type": "incoming",
+          "text": "Need the discount code.",
+          "time": "07:30 AM"
+        },
+        {
+          "type": "outgoing",
+          "text": "Here is your 20% discount code: MML20. Use it at checkout within 24 hours!",
+          "time": "07:31 AM",
+          "isAI": true
+        },
+        {
+          "type": "incoming",
+          "text": "Awesome, just checked out. Thanks!",
+          "time": "07:45 AM"
+        },
+        {
+          "type": "outgoing",
+          "text": "Thank you! Sent discount code confirmation.",
+          "time": "07:46 AM",
+          "isAI": false
+        }
+      ]
+    },
+    {
+      "id": "chat-4",
+      "name": "Sarah Jenkins (Web)",
+      "platform": "Web Live Chat",
+      "channel": "web",
+      "avatar": "SJ",
+      "fullName": "Sarah Jenkins",
+      "email": "s.jenkins@outlook.com",
+      "phone": "+1 (555) 381-9921",
+      "location": "New York, NY",
+      "match": "99% (Matched)",
+      "matchClass": "match-high",
+      "status": "open",
+      "lastActivity": "1d",
+      "tags": [
+        "Website Visitor",
+        "Support Chat"
+      ],
+      "attribution": {
+        "origin_post_id": null,
+        "origin_source_id": null,
+        "trigger_keyword": null,
+        "flow_id": null,
+        "flow_name": null,
+        "revenue_usd": 0
+      },
+      "messages": [
+        {
+          "type": "incoming",
+          "text": "Hello, having trouble downloading the PDF resource.",
+          "time": "Yesterday"
+        },
+        {
+          "type": "outgoing",
+          "text": "Hi Sarah! I've refreshed the download link for your account. Can you try again?",
+          "time": "Yesterday",
+          "isAI": false
+        },
+        {
+          "type": "incoming",
+          "text": "Thank you, that solved my issue!",
+          "time": "Yesterday"
+        }
+      ]
+    }
+  ],
+  "conversions": [],
+  "content_requests": [
+    {
+      "id": "request_demo_tiktok_hooks",
+      "topic": "TikTok Hook Formulas",
+      "source": "OmniFlow Inbox",
+      "conversation_id": "chat-4",
+      "requester": "Sarah Jenkins",
+      "message_excerpt": "Do you have a guide on TikTok hook formulas?",
+      "count": 1,
+      "priority": "medium",
+      "status": "new",
+      "created_at": "2026-06-30T00:00:00.000Z"
+    }
+  ]
+}

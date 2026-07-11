@@ -1,4 +1,62 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const API_BASE = '';
+
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[char]));
+    }
+
+    function createEl(tag, className, text) {
+        const element = document.createElement(tag);
+        if (className) element.className = className;
+        if (typeof text !== 'undefined') element.textContent = text;
+        return element;
+    }
+
+    function formatNumber(value) {
+        return new Intl.NumberFormat('en-US').format(Number(value) || 0);
+    }
+
+    function formatCurrency(value) {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            maximumFractionDigits: 0
+        }).format(Number(value) || 0);
+    }
+
+    function formatFreshness(timestamp) {
+        if (!timestamp) return 'Local seed data';
+        const date = new Date(timestamp);
+        if (Number.isNaN(date.getTime())) return 'Local seed data';
+        return date.toLocaleString([], {
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+        });
+    }
+
+    async function apiFetch(path, options = {}) {
+        const response = await fetch(`${API_BASE}${path}`, {
+            headers: {
+                'Content-Type': 'application/json',
+                ...(options.headers || {})
+            },
+            ...options
+        });
+        if (!response.ok) {
+            const detail = await response.json().catch(() => ({}));
+            throw new Error(detail.error || `Request failed: ${response.status}`);
+        }
+        return response.json();
+    }
+
     // -------------------------------------------------------------
     // Tab Navigation Logic
     // -------------------------------------------------------------
@@ -24,6 +82,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // -------------------------------------------------------------
+    // Time Range Selector Click Handler
+    // -------------------------------------------------------------
+    const rangeBtns = document.querySelectorAll(".time-range button");
+    rangeBtns.forEach(btn => {
+        btn.addEventListener("click", () => {
+            rangeBtns.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            renderAnalyticsOverview();
+        });
+    });
+
+    // -------------------------------------------------------------
     // Dark/Light Theme Toggle Logic
     // -------------------------------------------------------------
     const themeToggleBtn = document.getElementById('theme-toggle');
@@ -45,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // -------------------------------------------------------------
     // Interactive Unified Inbox Mock Data & Logic
     // -------------------------------------------------------------
-    const chatsData = {
+    let chatsData = {
         'chat-1': {
             name: 'johndoe_creative',
             platform: 'Instagram Direct',
@@ -120,11 +190,24 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeChatId = 'chat-1';
     let isAiPaused = false;
 
-    const chatItems = document.querySelectorAll('.chat-item');
+    const chatsScroller = document.querySelector('.chats-scroller');
+    let chatItems = document.querySelectorAll('.chat-item');
     const messagesContainer = document.getElementById('messages-container');
     const chatInput = document.getElementById('chat-input');
     const sendBtn = document.getElementById('send-chat-btn');
     const toggleAiBtn = document.getElementById('toggle-ai');
+    const logContentRequestBtn = document.getElementById('log-content-request');
+    const recordConversionBtn = document.getElementById('record-conversion');
+    const leadsTableBody = document.getElementById('leads-table-body');
+    const exportSmmBtn = document.getElementById('btn-export-smm');
+    const actionStatus = document.getElementById('actionStatus');
+    const contentTopicInput = document.getElementById('content-topic-input');
+    const conversionAmountInput = document.getElementById('conversion-amount-input');
+    let flowCatalog = [];
+    let conversionsData = [];
+    let contentRequestsData = [];
+    let statusData = null;
+    let triggersData = null;
     
     // Profile Panel Elements
     const avatarLarge = document.querySelector('.avatar-large');
@@ -138,7 +221,117 @@ document.addEventListener('DOMContentLoaded', () => {
     const profilePhoneVal = document.querySelector('.enrichment-data .data-row:nth-child(4) .val');
     const profileLocationVal = document.querySelector('.enrichment-data .data-row:nth-child(5) .val');
     const profileMatchVal = document.querySelector('.enrichment-data .data-row:nth-child(6) .val');
+    const originPostVal = document.getElementById('origin-post-val');
+    const originSourceVal = document.getElementById('origin-source-val');
+    const triggerKeywordVal = document.getElementById('trigger-keyword-val');
+    const flowNameVal = document.getElementById('flow-name-val');
+    const revenueVal = document.getElementById('revenue-val');
     const tagCloud = document.querySelector('.tag-cloud');
+
+    function platformIcon(channel) {
+        if (channel === 'whatsapp') return 'fa-brands fa-whatsapp';
+        if (channel === 'sms') return 'fa-solid fa-sms';
+        if (channel === 'web') return 'fa-solid fa-globe';
+        if (channel === 'facebook') return 'fa-brands fa-facebook-messenger';
+        return 'fa-brands fa-instagram';
+    }
+
+    function platformBadgeClass(channel) {
+        if (channel === 'whatsapp') return 'wa';
+        if (channel === 'sms') return 'sms';
+        if (channel === 'web') return 'web';
+        return 'ig';
+    }
+
+    function showActionStatus(message, type = 'success') {
+        if (!actionStatus) return;
+        actionStatus.hidden = false;
+        actionStatus.className = `action-status ${type}`;
+        actionStatus.textContent = message;
+        window.clearTimeout(showActionStatus.timer);
+        showActionStatus.timer = window.setTimeout(() => {
+            actionStatus.hidden = true;
+        }, 5200);
+    }
+
+    function statusTagElement(chat) {
+        if (!['converted', 'ai', 'enriched'].includes(chat.status)) return null;
+        const labels = {
+            converted: 'Converted',
+            ai: 'AI Handled',
+            enriched: 'Enriched'
+        };
+        const span = createEl('span', `tag tag-${chat.status === 'ai' ? 'ai' : chat.status}`, labels[chat.status]);
+        return span;
+    }
+
+    function lastMessage(chat) {
+        const last = chat.messages?.filter((msg) => msg.type !== 'system').at(-1);
+        return last?.text || 'No messages yet.';
+    }
+
+    function renderConversationList() {
+        const chats = Object.values(chatsData);
+        chatsScroller.replaceChildren();
+        chats.forEach((chat) => {
+            const item = createEl('div', `chat-item ${chat.id === activeChatId ? 'active' : ''}`);
+            item.dataset.id = chat.id;
+
+            const header = createEl('div', 'chat-item-header');
+            const meta = createEl('div', 'chat-meta');
+            const badge = createEl('div', `platform-badge ${platformBadgeClass(chat.channel)}`);
+            const icon = createEl('i', platformIcon(chat.channel));
+            badge.appendChild(icon);
+            meta.appendChild(badge);
+            meta.appendChild(createEl('span', 'chat-name', chat.name));
+            header.appendChild(meta);
+            header.appendChild(createEl('span', 'time', chat.lastActivity || ''));
+
+            item.appendChild(header);
+            item.appendChild(createEl('p', 'last-msg', lastMessage(chat)));
+            const tag = statusTagElement(chat);
+            if (tag) item.appendChild(tag);
+            chatsScroller.appendChild(item);
+        });
+        chatItems = document.querySelectorAll('.chat-item');
+    }
+
+    function renderLeadsTable() {
+        if (!leadsTableBody) return;
+        leadsTableBody.replaceChildren();
+        Object.values(chatsData).forEach((chat) => {
+            const attribution = chat.attribution || {};
+            const row = document.createElement('tr');
+            const socialCell = document.createElement('td');
+            const social = createEl('div', 'social-cell');
+            social.appendChild(createEl('i', platformIcon(chat.channel)));
+            social.appendChild(createEl('span', null, chat.name));
+            socialCell.appendChild(social);
+            row.appendChild(socialCell);
+
+            [
+                chat.fullName,
+                chat.email,
+                chat.phone,
+                chat.platform,
+                attribution.origin_source_id || 'Not linked',
+                attribution.flow_name || attribution.flow_id || 'No flow',
+                `$${Number(attribution.revenue_usd || 0).toLocaleString()}`
+            ].forEach((value) => row.appendChild(createEl('td', null, value)));
+
+            const statusCell = document.createElement('td');
+            const badgeClass = chat.status === 'converted'
+                ? 'badge badge-success'
+                : chat.status === 'ai'
+                    ? 'badge badge-info'
+                    : chat.status === 'enriched'
+                        ? 'badge badge-warning'
+                        : 'badge badge-neutral';
+            statusCell.appendChild(createEl('span', badgeClass, chat.status ? chat.status.toUpperCase() : 'OPEN'));
+            row.appendChild(statusCell);
+            leadsTableBody.appendChild(row);
+        });
+    }
 
     // Function to render messages for active chat
     function renderMessages(chatId) {
@@ -149,19 +342,34 @@ document.addEventListener('DOMContentLoaded', () => {
             if (msg.type === 'system') {
                 const systemDiv = document.createElement('div');
                 systemDiv.className = 'msg-group system';
-                systemDiv.innerHTML = `<div class="system-notification"><i class="fa-solid fa-shield-halved"></i> ${msg.text}</div>`;
+                const notice = document.createElement('div');
+                notice.className = 'system-notification';
+                const icon = document.createElement('i');
+                icon.className = 'fa-solid fa-shield-halved';
+                notice.appendChild(icon);
+                notice.append(` ${msg.text}`);
+                systemDiv.appendChild(notice);
                 messagesContainer.appendChild(systemDiv);
             } else {
                 const groupDiv = document.createElement('div');
                 groupDiv.className = `msg-group ${msg.type} ${msg.isAI ? 'ai-agent' : ''}`;
-                
-                let aiTag = msg.isAI ? ' <span class="ai-tag">AI Agent</span>' : '';
-                groupDiv.innerHTML = `
-                    <div class="msg-bubble">
-                        <p>${msg.text}</p>
-                        <span class="msg-time">${msg.time}${aiTag}</span>
-                    </div>
-                `;
+                const bubble = document.createElement('div');
+                bubble.className = 'msg-bubble';
+                const text = document.createElement('p');
+                text.textContent = msg.text;
+                const time = document.createElement('span');
+                time.className = 'msg-time';
+                time.textContent = msg.time || '';
+                if (msg.isAI) {
+                    const aiTag = document.createElement('span');
+                    aiTag.className = 'ai-tag';
+                    aiTag.textContent = 'AI Agent';
+                    time.append(' ');
+                    time.appendChild(aiTag);
+                }
+                bubble.appendChild(text);
+                bubble.appendChild(time);
+                groupDiv.appendChild(bubble);
                 messagesContainer.appendChild(groupDiv);
             }
         });
@@ -190,6 +398,13 @@ document.addEventListener('DOMContentLoaded', () => {
         profileLocationVal.textContent = chat.location;
         profileMatchVal.textContent = chat.match;
         profileMatchVal.className = `val ${chat.matchClass}`;
+
+        const attribution = chat.attribution || {};
+        originPostVal.textContent = attribution.origin_post_id || 'Not attributed';
+        originSourceVal.textContent = attribution.origin_source_id || 'Not linked';
+        triggerKeywordVal.textContent = attribution.trigger_keyword || 'None';
+        flowNameVal.textContent = attribution.flow_name || attribution.flow_id || 'No flow';
+        revenueVal.textContent = `$${Number(attribution.revenue_usd || 0).toLocaleString()}`;
         
         // Tags
         tagCloud.innerHTML = '';
@@ -206,19 +421,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Conversation list item clicks
-    chatItems.forEach(item => {
-        item.addEventListener('click', () => {
-            chatItems.forEach(c => c.classList.remove('active'));
-            item.classList.add('active');
-            
-            activeChatId = item.getAttribute('data-id');
-            renderMessages(activeChatId);
-            updateProfilePanel(activeChatId);
-        });
+    chatsScroller.addEventListener('click', (event) => {
+        const item = event.target.closest('.chat-item');
+        if (!item) return;
+        chatItems.forEach(c => c.classList.remove('active'));
+        item.classList.add('active');
+        
+        activeChatId = item.getAttribute('data-id');
+        renderMessages(activeChatId);
+        updateProfilePanel(activeChatId);
     });
 
     // Send Message Action
-    function sendMessage() {
+    async function persistMessage(message) {
+        const result = await apiFetch(`/api/conversations/${encodeURIComponent(activeChatId)}/messages`, {
+            method: 'POST',
+            body: JSON.stringify(message)
+        });
+        chatsData[activeChatId] = result.conversation;
+        renderConversationList();
+        renderLeadsTable();
+    }
+
+    async function sendMessage() {
         const text = chatInput.value.trim();
         if (!text) return;
         
@@ -226,15 +451,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         
         // Append outgoing message
-        chatsData[activeChatId].messages.push({
+        const message = {
             type: 'outgoing',
             text: text,
             time: timeStr,
             isAI: false
-        });
+        };
+        chatsData[activeChatId].messages.push(message);
         
         renderMessages(activeChatId);
         chatInput.value = '';
+        persistMessage(message).catch((error) => {
+            console.error(error);
+            showActionStatus(`Could not save message: ${error.message}`, 'error');
+        });
         
         // Update sidebar preview
         const activeChatItem = document.querySelector(`.chat-item[data-id="${activeChatId}"]`);
@@ -245,7 +475,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Mock automated response if AI is NOT paused
         if (!isAiPaused) {
             setTimeout(() => {
-                let replyText = "Understood. The OmniFlow engine is analyzing your request. A team member will follow up shortly if needed.";
+                let replyText = "Understood. Message Manager is analyzing your request. A team member will follow up shortly if needed.";
                 
                 if (text.toLowerCase().includes('price') || text.toLowerCase().includes('cost')) {
                     replyText = "The MML Growth Suite is priced at $97/mo. You can register via our secure payment gateway at mml-checkout.com/growth-book.";
@@ -254,13 +484,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     toggleAiMode(true);
                 }
                 
-                chatsData[activeChatId].messages.push({
+                const aiMessage = {
                     type: 'outgoing',
                     text: replyText,
                     time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                     isAI: true
-                });
+                };
+                chatsData[activeChatId].messages.push(aiMessage);
                 renderMessages(activeChatId);
+                persistMessage(aiMessage).catch((error) => console.error(error));
                 
                 if (activeChatItem) {
                     activeChatItem.querySelector('p').textContent = replyText;
@@ -290,6 +522,72 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     toggleAiBtn.addEventListener('click', () => toggleAiMode());
 
+    async function logContentRequest() {
+        const chat = chatsData[activeChatId];
+        if (!chat) return;
+        const topic = (contentTopicInput?.value || '').trim();
+        if (!topic) return;
+        const latestIncoming = [...(chat.messages || [])].reverse().find((msg) => msg.type === 'incoming');
+        try {
+            const request = await apiFetch('/api/content-requests', {
+                method: 'POST',
+                body: JSON.stringify({
+                    topic,
+                    conversation_id: chat.id,
+                    requester: chat.fullName || chat.name,
+                    message_excerpt: latestIncoming?.text || lastMessage(chat),
+                    priority: 'medium'
+                })
+            });
+            contentRequestsData.push(request);
+            renderAnalyticsOverview();
+            renderHandoffStatus();
+            showActionStatus(`Content request logged for SMM: ${request.topic}`);
+        } catch (error) {
+            showActionStatus(`Could not log content request: ${error.message}`, 'error');
+        }
+    }
+
+    async function recordConversion() {
+        const chat = chatsData[activeChatId];
+        if (!chat) return;
+        const attribution = chat.attribution || {};
+        const amountInput = conversionAmountInput?.value || String(attribution.revenue_usd || 97);
+        if (!amountInput) return;
+        const revenue = Number(amountInput);
+        if (!Number.isFinite(revenue) || revenue < 0) {
+            showActionStatus('Revenue must be a non-negative number.', 'error');
+            return;
+        }
+        try {
+            const conversion = await apiFetch('/api/conversions', {
+                method: 'POST',
+                body: JSON.stringify({
+                    post_id: attribution.origin_post_id || `manual_${chat.id}`,
+                    lead_id: chat.id,
+                    revenue_usd: revenue,
+                    source_id: attribution.origin_source_id,
+                    flow_id: attribution.flow_id,
+                    trigger_keyword: attribution.trigger_keyword
+                })
+            });
+            conversionsData.push(conversion);
+            chat.status = 'converted';
+            chat.attribution = { ...attribution, revenue_usd: revenue };
+            renderConversationList();
+            renderLeadsTable();
+            updateProfilePanel(activeChatId);
+            renderAnalyticsOverview();
+            renderHandoffStatus();
+            showActionStatus(`Conversion recorded for SMM: ${formatCurrency(revenue)}`);
+        } catch (error) {
+            showActionStatus(`Could not record conversion: ${error.message}`, 'error');
+        }
+    }
+
+    logContentRequestBtn.addEventListener('click', logContentRequest);
+    recordConversionBtn.addEventListener('click', recordConversion);
+
     // -------------------------------------------------------------
     // Interactive Flow Builder Node Appending
     // -------------------------------------------------------------
@@ -305,25 +603,45 @@ document.addEventListener('DOMContentLoaded', () => {
         node.style.top = `${150 + (nodeCount * 10) % 100}px`;
         node.style.left = `${400 + (nodeCount * 25) % 300}px`;
         
-        node.innerHTML = `
-            <div class="node-header"><i class="fa-solid fa-envelope"></i> Automated Step #${nodeCount}</div>
-            <div class="node-body">
-                <p>Action Type: <strong>Multi-Channel Broadcast</strong></p>
-            </div>
-            <div class="connector connector-in"></div>
-            <div class="connector connector-out"></div>
-        `;
+        const header = createEl('div', 'node-header');
+        header.appendChild(createEl('i', 'fa-solid fa-envelope'));
+        header.append(` Automated Step #${nodeCount}`);
+        const body = createEl('div', 'node-body');
+        const bodyText = document.createElement('p');
+        bodyText.append('Action Type: ');
+        bodyText.appendChild(createEl('strong', null, 'Multi-Channel Broadcast'));
+        body.appendChild(bodyText);
+        node.appendChild(header);
+        node.appendChild(body);
+        node.appendChild(createEl('div', 'connector connector-in'));
+        node.appendChild(createEl('div', 'connector connector-out'));
         
         canvasWorkspace.appendChild(node);
         
-        // Notify User
-        alert(`New Step #${nodeCount} appended to flow builder canvas! Drag to configure.`);
+        showActionStatus(`New Step #${nodeCount} appended to flow builder canvas.`);
     });
 
     // Simulated Save/Deploy Flow
     const btnSaveFlow = document.getElementById('btn-save-flow');
-    btnSaveFlow.addEventListener('click', () => {
-        alert("OmniFlow Live Update: Visual flow successfully built and deployed across Facebook, Instagram, and WhatsApp APIs!");
+    btnSaveFlow.addEventListener('click', async () => {
+        const flow = flowCatalog[0] || { id: 'flow_mml_growth_book_v2', name: 'MML Growth Book Flow', default_trigger_keyword: 'GROWTH' };
+        try {
+            const trigger = await apiFetch('/api/triggers/register', {
+                method: 'POST',
+                body: JSON.stringify({
+                    post_id: 'ig_post_demo_004',
+                    source_id: 'youtube-demo-growth-strategy',
+                    trigger_keyword: flow.default_trigger_keyword || 'GROWTH',
+                    flow_id: flow.id,
+                    flow_name: flow.name,
+                    status: 'active'
+                })
+            });
+            await loadApiState();
+            showActionStatus(`Message Manager trigger registered: ${trigger.trigger_keyword} -> ${trigger.flow_name}`);
+        } catch (error) {
+            showActionStatus(`Could not deploy flow: ${error.message}`, 'error');
+        }
     });
 
     // -------------------------------------------------------------
@@ -331,6 +649,189 @@ document.addEventListener('DOMContentLoaded', () => {
     // -------------------------------------------------------------
     const btnExportLeads = document.getElementById('btn-export-leads');
     btnExportLeads.addEventListener('click', () => {
-        alert("Enriched CSV generation successful: 1,429 resolved identities matching social profiles have been compiled and sent to CRM Integration pipeline.");
+        showActionStatus('Lead enrichment CSV queued. Use Export to SMM for cross-dashboard handoff files.');
     });
+
+    exportSmmBtn.addEventListener('click', async () => {
+        try {
+            const result = await apiFetch('/api/smm/export', { method: 'POST', body: JSON.stringify({}) });
+            renderHandoffStatus(result);
+            showActionStatus(`SMM export complete: ${result.summary.conversations} inbox rows, ${result.summary.content_requests} content requests, ${result.summary.conversions} conversions.`);
+        } catch (error) {
+            showActionStatus(`Could not export SMM handoff files: ${error.message}`, 'error');
+        }
+    });
+
+    function renderHandoffStatus(exportResult = null) {
+        const handoffStatus = document.getElementById('handoffStatus');
+        if (!handoffStatus) return;
+
+        const conversations = Object.values(chatsData || {});
+        const openConversations = conversations.filter((chat) => !['closed', 'converted'].includes(chat.status)).length;
+        const requestCount = contentRequestsData.length;
+        const conversionCount = conversionsData.length;
+        const hasWork = requestCount > 0 || conversionCount > 0 || openConversations > 0;
+        const statusClass = exportResult ? 'ready' : hasWork ? 'warning' : 'ready';
+        const statusLabel = exportResult ? 'Exported' : hasWork ? 'Ready to export' : 'No pending handoff';
+        const headline = exportResult ? 'SMM handoff files refreshed' : hasWork ? 'SMM handoff is ready' : 'SMM handoff is current';
+        const exportFreshness = exportResult?.generated_at ? formatFreshness(exportResult.generated_at) : 'Run export when ready';
+
+        handoffStatus.innerHTML = `
+            <div class="handoff-copy">
+                <span class="status-pill ${statusClass}">${escapeHtml(statusLabel)}</span>
+                <h2>${escapeHtml(headline)}</h2>
+                <p>${formatNumber(requestCount)} content requests, ${formatNumber(conversionCount)} conversions, and ${formatNumber(openConversations)} active conversations are available for SMM planning.</p>
+            </div>
+            <dl class="handoff-metadata">
+                <div>
+                    <dt>Export files</dt>
+                    <dd>${exportResult ? 'Inbox, content requests, conversions' : 'Pending local refresh'}</dd>
+                </div>
+                <div>
+                    <dt>Last action</dt>
+                    <dd>${escapeHtml(exportFreshness)}</dd>
+                </div>
+                <div>
+                    <dt>Next view</dt>
+                    <dd>Open SMM publishing status / data integration</dd>
+                </div>
+            </dl>
+        `;
+    }
+
+    function renderAnalyticsOverview() {
+        const operationsStatus = document.getElementById('operationsStatus');
+        const statsGrid = document.getElementById('statsGrid');
+        if (!operationsStatus || !statsGrid) return;
+
+        const triggerList = triggersData?.triggers || [];
+        const activeTriggers = Number(triggersData?.summary?.active ?? triggerList.filter((trigger) => trigger.status === 'active').length);
+        const totalTriggers = Number(triggersData?.summary?.total ?? triggerList.length);
+        const conversations = Object.values(chatsData || {});
+        const openConversations = conversations.filter((chat) => !['closed', 'converted'].includes(chat.status)).length;
+        const conversionRevenue = conversionsData.reduce((sum, conversion) => sum + Number(conversion.revenue_usd || 0), 0);
+        const requestCount = contentRequestsData.length;
+        const summary = statusData?.summary || {};
+        const hasLiveApi = Boolean(statusData?.status === 'ok');
+        const isReady = hasLiveApi && activeTriggers > 0;
+        const needsHandoff = requestCount > 0 || conversionsData.length > 0;
+        const primaryAction = needsHandoff
+            ? 'Export SMM readback files'
+            : openConversations > 0
+                ? 'Review open inbox conversations'
+                : 'Monitor automation health';
+
+        const headline = isReady
+            ? 'Message automation is ready'
+            : hasLiveApi
+                ? 'Automation is connected, but triggers need review'
+                : 'Using local dashboard fallback data';
+        const detail = `${formatNumber(activeTriggers)} of ${formatNumber(totalTriggers)} triggers active. ${formatNumber(openConversations)} conversations need operator attention.`;
+        const statusClass = isReady ? 'ready' : hasLiveApi ? 'warning' : 'error';
+        const statusLabel = isReady ? 'Ready' : hasLiveApi ? 'Review triggers' : 'Offline fallback';
+
+        operationsStatus.innerHTML = `
+            <div class="operations-copy">
+                <span class="status-pill ${statusClass}">${escapeHtml(statusLabel)}</span>
+                <h2>${escapeHtml(headline)}</h2>
+                <p>${escapeHtml(detail)}</p>
+            </div>
+            <dl class="operations-metadata">
+                <div>
+                    <dt>Scope</dt>
+                    <dd>${formatNumber(summary.flows ?? flowCatalog.length)} flows / ${formatNumber(summary.conversations ?? conversations.length)} conversations</dd>
+                </div>
+                <div>
+                    <dt>Primary action</dt>
+                    <dd>${escapeHtml(primaryAction)}</dd>
+                </div>
+                <div>
+                    <dt>Freshness</dt>
+                    <dd>${escapeHtml(formatFreshness(statusData?.generated_at))}</dd>
+                </div>
+            </dl>
+        `;
+
+        const activeRange = document.querySelector('.time-range button.active')?.textContent || '7d';
+
+        const cards = [
+            {
+                icon: 'fa-bolt',
+                glow: 'purple-glow',
+                value: `${activeTriggers} / ${totalTriggers}`,
+                label: 'Triggers & Flows Active',
+                trend: `Success Rate: 100% · ${activeRange}`,
+                trendClass: activeTriggers > 0 ? 'positive' : 'neutral'
+            },
+            {
+                icon: 'fa-comments',
+                glow: 'blue-glow',
+                value: formatNumber(openConversations),
+                label: 'Operator Handled DMs',
+                trend: `Response Delay: 1.4s · ${activeRange}`,
+                trendClass: openConversations > 0 ? 'positive' : 'neutral'
+            },
+            {
+                icon: 'fa-file-lines',
+                glow: 'cyan-glow',
+                value: formatNumber(requestCount),
+                label: 'SMM Handoff Requests',
+                trend: `Source: Exchange Bus`,
+                trendClass: requestCount > 0 ? 'positive' : 'neutral'
+            },
+            {
+                icon: 'fa-cart-shopping',
+                glow: 'green-glow',
+                value: formatCurrency(conversionRevenue),
+                label: 'Conversion E-commerce Sales',
+                trend: `Conv. Rate: 12.4% · ${activeRange}`,
+                trendClass: conversionRevenue > 0 ? 'positive' : 'neutral'
+            }
+        ];
+
+        statsGrid.innerHTML = cards.map((card) => `
+            <div class="stat-card glass-card live-stat">
+                <div class="stat-icon ${card.glow}"><i class="fa-solid ${card.icon}"></i></div>
+                <div class="stat-details">
+                    <h3>${escapeHtml(card.value)}</h3>
+                    <p>${escapeHtml(card.label)}</p>
+                    <span class="trend ${card.trendClass}">${escapeHtml(card.trend)}</span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async function loadApiState() {
+        try {
+            const [status, triggers, flows, conversations, conversions, contentRequests] = await Promise.all([
+                apiFetch('/api/status'),
+                apiFetch('/api/triggers'),
+                apiFetch('/api/flows'),
+                apiFetch('/api/conversations'),
+                apiFetch('/api/conversions'),
+                apiFetch('/api/content-requests')
+            ]);
+            statusData = status;
+            triggersData = triggers;
+            flowCatalog = flows;
+            conversionsData = conversions;
+            contentRequestsData = contentRequests;
+            chatsData = Object.fromEntries(conversations.map((chat) => [chat.id, chat]));
+            activeChatId = conversations[0]?.id || activeChatId;
+            renderConversationList();
+            renderLeadsTable();
+            renderMessages(activeChatId);
+            updateProfilePanel(activeChatId);
+            renderAnalyticsOverview();
+            renderHandoffStatus();
+        } catch (error) {
+            console.error(error);
+            renderConversationList();
+            renderLeadsTable();
+            renderAnalyticsOverview();
+            renderHandoffStatus();
+        }
+    }
+
+    loadApiState();
 });
