@@ -342,7 +342,10 @@
                             <div class="user-meta">
                                 <div class="avatar-large">JD</div>
                                 <div>
-                                    <h3>johndoe_creative</h3>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <h3>johndoe_creative</h3>
+                                        <span id="verified-sms-badge" style="display: none; font-size: 9px; background: rgba(54, 194, 147, 0.15); color: #36c293; border: 1px solid #36c293; padding: 1px 6px; border-radius: 12px; font-weight: 600; white-space: nowrap;"><i class="fa-solid fa-shield-halved"></i> Verified Sender</span>
+                                    </div>
                                     <p>Active 12m ago via Instagram Direct</p>
                                 </div>
                             </div>
@@ -354,6 +357,11 @@
                                 <button class="btn btn-outline" id="toggle-ai"><i class="fa-solid fa-robot"></i> Pause AI Agent</button>
                                 <button class="btn btn-danger"><i class="fa-solid fa-user-xmark"></i> Close Ticket</button>
                             </div>
+                        </div>
+
+                        <!-- Compliance Opt-Out Warning Banner -->
+                        <div id="compliance-block-banner" style="display: none; padding: 10px 16px; background: rgba(239, 68, 68, 0.1); border-bottom: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444; font-size: 12px; font-weight: 600; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-circle-exclamation"></i> Outbound Block Active: This lead has opted out of communications (STOP). Outgoing messages are disabled.
                         </div>
 
                         <!-- Chat Messages Scroller -->
@@ -720,9 +728,40 @@
                                 <label style="font-size: 11px; font-weight: 600; color: var(--text); display: block; margin-bottom: 4px;">Twilio Phone Number</label>
                                 <input type="text" id="sms-phone" style="width: 100%; padding: 6px 10px; font-size: 12px; background: var(--panel-1); border: 1px solid var(--border); border-radius: 4px; color: var(--text);">
                             </div>
-                            <div class="form-group">
+                            <div class="form-group" style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="sms-pools-enabled" style="width: auto;">
+                                <label for="sms-pools-enabled" style="font-size: 11px; font-weight: 600; color: var(--text); margin: 0;">Enable Messaging Service Pools</label>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="sms-sticky-enabled" style="width: auto;">
+                                <label for="sms-sticky-enabled" style="font-size: 11px; font-weight: 600; color: var(--text); margin: 0;">Enable Sticky Sender Assignment</label>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="sms-alpha-enabled" style="width: auto;">
+                                <label for="sms-alpha-enabled" style="font-size: 11px; font-weight: 600; color: var(--text); margin: 0;">Use Alphanumeric Sender ID</label>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 12px;">
+                                <label style="font-size: 11px; font-weight: 600; color: var(--text); display: block; margin-bottom: 4px;">Alphanumeric Sender ID (max 11 chars)</label>
+                                <input type="text" id="sms-alpha-id" style="width: 100%; padding: 6px 10px; font-size: 12px; background: var(--panel-1); border: 1px solid var(--border); border-radius: 4px; color: var(--text);">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 12px;">
+                                <label style="font-size: 11px; font-weight: 600; color: var(--text); display: block; margin-bottom: 4px;">Number Pool (comma-separated short/long codes)</label>
+                                <input type="text" id="sms-pool-list" style="width: 100%; padding: 6px 10px; font-size: 12px; background: var(--panel-1); border: 1px solid var(--border); border-radius: 4px; color: var(--text);" placeholder="88202, +13109021244">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border); padding-top: 12px;">
+                                <input type="checkbox" id="sms-verified-enabled" style="width: auto;">
+                                <label for="sms-verified-enabled" style="font-size: 11px; font-weight: 600; color: var(--text); margin: 0;">Enable Google Verified SMS</label>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 12px;">
+                                <label style="font-size: 11px; font-weight: 600; color: var(--text); display: block; margin-bottom: 4px;">Verified Brand Profile Name</label>
+                                <input type="text" id="sms-verified-name" style="width: 100%; padding: 6px 10px; font-size: 12px; background: var(--panel-1); border: 1px solid var(--border); border-radius: 4px; color: var(--text);" placeholder="MML Suite">
+                            </div>
+                            
+                            <div class="form-group" style="border-top: 1px solid var(--border); padding-top: 12px;">
                                 <label style="font-size: 11px; font-weight: 600; color: var(--text); display: block; margin-bottom: 4px;">Live Webhook URL Callback</label>
-                                <code style="font-size: 10px; color: var(--muted); background: var(--panel-1); padding: 4px 8px; border-radius: 4px; display: block; border: 1px solid var(--border);">http://localhost:8888/webhooks/sms</code>
+                                <code style="font-size: 10px; color: var(--muted); background: var(--panel-1); padding: 4px 8px; border-radius: 4px; display: block; border: 1px solid var(--border); margin-bottom: 6px;">http://localhost:8888/webhooks/sms</code>
+                                <label style="font-size: 11px; font-weight: 600; color: var(--text); display: block; margin-bottom: 4px;">Outbound Status Webhook Callback</label>
+                                <code style="font-size: 10px; color: var(--muted); background: var(--panel-1); padding: 4px 8px; border-radius: 4px; display: block; border: 1px solid var(--border);">http://localhost:8888/webhooks/delivery-status</code>
                             </div>
                         </div>
                     </div>

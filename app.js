@@ -196,6 +196,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatInput = document.getElementById('chat-input');
     const sendBtn = document.getElementById('send-chat-btn');
     const toggleAiBtn = document.getElementById('toggle-ai');
+    const complianceBlockBanner = document.getElementById('compliance-block-banner');
+    const verifiedSmsBadge = document.getElementById('verified-sms-badge');
     const logContentRequestBtn = document.getElementById('log-content-request');
     const recordConversionBtn = document.getElementById('record-conversion');
     const leadsTableBody = document.getElementById('leads-table-body');
@@ -354,7 +356,30 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderMessages(chatId) {
         messagesContainer.innerHTML = '';
         const chat = chatsData[chatId];
+        if (!chat) return;
         
+        if (chat.opted_out) {
+            if (complianceBlockBanner) complianceBlockBanner.style.display = 'flex';
+            chatInput.disabled = true;
+            sendBtn.disabled = true;
+            chatInput.placeholder = 'Messages blocked: Customer has opted out (STOP)';
+        } else {
+            if (complianceBlockBanner) complianceBlockBanner.style.display = 'none';
+            chatInput.disabled = false;
+            sendBtn.disabled = false;
+            chatInput.placeholder = isAiPaused ? 'Type a message (Human takeover active)...' : 'Type a message (AI is currently handling)...';
+        }
+
+        if (verifiedSmsBadge) {
+            verifiedSmsBadge.style.display = 'none';
+            apiFetch('/api/connectors').then(creds => {
+                if (creds.sms?.verified_sms_enabled && (chat.platform === 'SMS Messaging' || chat.channel === 'sms')) {
+                    verifiedSmsBadge.innerHTML = `<i class="fa-solid fa-shield-halved"></i> ${creds.sms.verified_brand_name || 'MML Suite'} Verified`;
+                    verifiedSmsBadge.style.display = 'inline-block';
+                }
+            }).catch(e => console.error(e));
+        }
+
         chat.messages.forEach(msg => {
             if (msg.type === 'system') {
                 const systemDiv = document.createElement('div');
@@ -384,6 +409,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     time.append(' ');
                     time.appendChild(aiTag);
                 }
+                
+                if (msg.type === 'outgoing') {
+                    const statusSpan = document.createElement('span');
+                    statusSpan.style.marginLeft = '6px';
+                    statusSpan.style.fontSize = '10px';
+                    statusSpan.style.verticalAlign = 'middle';
+                    
+                    const status = msg.status || 'delivered';
+                    if (status === 'sent') {
+                        statusSpan.innerHTML = '<i class="fa-solid fa-check" style="color: var(--muted);" title="Sent to provider"></i>';
+                    } else if (status === 'delivered') {
+                        statusSpan.innerHTML = '<i class="fa-solid fa-check-double" style="color: #36c293;" title="Delivered successfully"></i>';
+                    } else if (status === 'failed') {
+                        const err = msg.error_code ? ` (Error ${msg.error_code}: Carrier Block)` : '';
+                        statusSpan.innerHTML = `<i class="fa-solid fa-circle-exclamation" style="color: #ef4444;" title="Delivery Failed${err}"></i>`;
+                    }
+                    time.appendChild(statusSpan);
+                }
+                
                 bubble.appendChild(text);
                 bubble.appendChild(time);
                 groupDiv.appendChild(bubble);
@@ -963,6 +1007,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('sms-sid').value = creds.sms?.account_sid || '';
                     document.getElementById('sms-token').value = creds.sms?.auth_token || '';
                     document.getElementById('sms-phone').value = creds.sms?.phone_number || '';
+                    
+                    document.getElementById('sms-pools-enabled').checked = Boolean(creds.sms?.messaging_service_enabled);
+                    document.getElementById('sms-sticky-enabled').checked = Boolean(creds.sms?.sticky_sender_enabled);
+                    document.getElementById('sms-alpha-enabled').checked = Boolean(creds.sms?.use_alphanumeric_sender);
+                    document.getElementById('sms-alpha-id').value = creds.sms?.alphanumeric_sender_id || '';
+                    
+                    const poolList = creds.sms?.number_pool ? creds.sms.number_pool.map(p => p.number).join(', ') : '';
+                    document.getElementById('sms-pool-list').value = poolList;
+                    
+                    document.getElementById('sms-verified-enabled').checked = Boolean(creds.sms?.verified_sms_enabled);
+                    document.getElementById('sms-verified-name').value = creds.sms?.verified_brand_name || '';
                 }
             }).catch(err => console.error(err));
         } catch (error) {
@@ -1119,7 +1174,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 sms: {
                     account_sid: document.getElementById('sms-sid').value.trim(),
                     auth_token: document.getElementById('sms-token').value.trim(),
-                    phone_number: document.getElementById('sms-phone').value.trim()
+                    phone_number: document.getElementById('sms-phone').value.trim(),
+                    messaging_service_enabled: document.getElementById('sms-pools-enabled').checked,
+                    sticky_sender_enabled: document.getElementById('sms-sticky-enabled').checked,
+                    use_alphanumeric_sender: document.getElementById('sms-alpha-enabled').checked,
+                    alphanumeric_sender_id: document.getElementById('sms-alpha-id').value.trim(),
+                    number_pool: document.getElementById('sms-pool-list').value.split(',').map(n => ({ type: 'long_code', number: n.trim() })).filter(n => n.number),
+                    verified_sms_enabled: document.getElementById('sms-verified-enabled').checked,
+                    verified_brand_name: document.getElementById('sms-verified-name').value.trim()
                 }
             };
             

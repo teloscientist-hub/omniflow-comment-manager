@@ -234,7 +234,77 @@ function ensureCollections(state) {
   state.content_requests ||= [];
   state.drafts ||= [];
   state.leads ||= [];
+  state.short_links ||= [];
   return state;
+}
+
+function shortenLinksInText(state, text, leadId) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  return text.replace(urlRegex, (url) => {
+    const code = `lnk_${randomUUID().slice(0, 6)}`;
+    state.short_links.push({
+      code,
+      url,
+      lead_id: leadId || null,
+      clicks: 0,
+      created_at: new Date().toISOString()
+    });
+    return `http://localhost:8888/s/${code}`;
+  });
+}
+
+function processIncomingMessage(state, conversation, text) {
+  const normalized = text.trim().toUpperCase();
+  const optOutKeywords = ["STOP", "UNSUBSCRIBE", "CANCEL", "QUIT", "END"];
+  const optInKeywords = ["START", "YES", "UNSTOP"];
+  
+  const lead = state.leads.find(l => l.id === conversation.lead_id);
+  
+  if (optOutKeywords.includes(normalized)) {
+    conversation.opted_out = true;
+    if (lead) {
+      lead.opted_out = true;
+      lead.timeline.push({
+        event: "Opt-out requested",
+        detail: `Carrier STOP keyword match: "${text}"`,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    conversation.messages.push({
+      type: "system",
+      text: "User has opted out from messages. Outbound gateway has blocked future dispatches."
+    });
+    
+    conversation.messages.push({
+      type: "outgoing",
+      text: "You have successfully opted out. You will no longer receive messages. Reply START to opt back in.",
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      status: "delivered"
+    });
+  } else if (optInKeywords.includes(normalized) && conversation.opted_out) {
+    conversation.opted_out = false;
+    if (lead) {
+      lead.opted_out = false;
+      lead.timeline.push({
+        event: "Opt-in requested",
+        detail: `Carrier START keyword match: "${text}"`,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    conversation.messages.push({
+      type: "system",
+      text: "User opted back in. Outbound block removed."
+    });
+    
+    conversation.messages.push({
+      type: "outgoing",
+      text: "Welcome back! You have successfully opted back into communications.",
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      status: "delivered"
+    });
+  }
 }
 
 function buildSmmExports(state) {
@@ -364,6 +434,73 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (req.method === "GET" && url.pathname.startsWith("/s/")) {
+    const code = url.pathname.split("/").pop();
+    const mapping = state.short_links.find(lnk => lnk.code === code);
+    if (!mapping) {
+      res.writeHead(404, { "content-type": "text/plain" });
+      res.end("Short link not found");
+      return;
+    }
+    
+    mapping.clicks = (mapping.clicks || 0) + 1;
+    
+    if (mapping.lead_id) {
+      const lead = state.leads.find(l => l.id === mapping.lead_id);
+      if (lead) {
+        lead.timeline.push({
+          event: "Short link clicked",
+          detail: `Target URL: ${mapping.url} (Code: ${code}, Total clicks: ${mapping.clicks})`,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
+    await writeState(state);
+    
+    res.writeHead(302, { "Location": mapping.url });
+    res.end();
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/webhooks/delivery-status") {
+    const payload = await readJsonBody(req);
+    const messageId = payload.MessageSid || payload.message_id;
+    const status = payload.MessageStatus || payload.status;
+    const errorCode = payload.ErrorCode || payload.error_code || null;
+    
+    console.log(`[DELIVERY CALLBACK] Message ${messageId} status update: ${status} (Error: ${errorCode})`);
+    
+    let foundMessage = null;
+    let foundConversation = null;
+    
+    for (const conv of state.conversations) {
+      const msg = conv.messages.find(m => m.id === messageId);
+      if (msg) {
+        foundMessage = msg;
+        foundConversation = conv;
+        break;
+      }
+    }
+    
+    if (foundMessage) {
+      foundMessage.status = status;
+      if (errorCode) {
+        foundMessage.error_code = errorCode;
+        
+        const lead = state.leads.find(l => l.id === foundConversation.lead_id);
+        if (lead) {
+          lead.timeline.push({
+            event: "Message delivery failure",
+            detail: `Twilio status webhook: failed (Error ${errorCode})`,
+            timestamp: new Date().toISOString()
+          });
+        }
+      }
+      await writeState(state);
+    }
+    return sendJson(res, 200, { ok: true });
+  }
+
   if (req.method === "POST" && (url.pathname === "/webhooks/instagram" || url.pathname === "/webhooks/whatsapp" || url.pathname === "/webhooks/sms")) {
     const payload = await readJsonBody(req);
     console.log(`Received Webhook callback on ${url.pathname}:`, JSON.stringify(payload));
@@ -419,6 +556,7 @@ async function handleApi(req, res, url) {
     conversation.lastActivity = "now";
     
     resolveLeadForConversation(state, conversation);
+    processIncomingMessage(state, conversation, text);
     await writeState(state);
     
     return sendJson(res, 200, { ok: true });
@@ -712,11 +850,20 @@ async function handleApi(req, res, url) {
     const conversation = state.conversations.find((item) => item.id === conversationId);
     if (!conversation) return sendError(res, 404, "conversation not found");
     
+    if (conversation.opted_out) {
+      return sendError(res, 400, "Outbound messages blocked due to compliance opt-out");
+    }
+    
+    const finalMessageText = shortenLinksInText(state, draft.text, conversation.lead_id);
+    const messageId = `msg_${randomUUID()}`;
+    
     const message = {
+      id: messageId,
       type: "outgoing",
-      text: draft.text,
+      text: finalMessageText,
       time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      isAI: true
+      isAI: true,
+      status: "sent"
     };
     conversation.messages.push(message);
     conversation.lastActivity = "now";
@@ -725,14 +872,65 @@ async function handleApi(req, res, url) {
     const handle = conversation.name;
     const platform = conversation.platform;
     
+    let selectedSender = creds.sms.phone_number || "+12345";
+    if (platform === "SMS Messaging" && creds.sms.messaging_service_enabled) {
+      if (creds.sms.use_alphanumeric_sender && creds.sms.alphanumeric_sender_id) {
+        selectedSender = creds.sms.alphanumeric_sender_id;
+      } else if (creds.sms.sticky_sender_enabled) {
+        const lead = state.leads.find(l => l.id === conversation.lead_id);
+        if (lead) {
+          if (!lead.assigned_sender_number) {
+            const pool = creds.sms.number_pool || [];
+            const randomCode = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)].number : "88202";
+            lead.assigned_sender_number = randomCode;
+            lead.timeline.push({
+              event: "Sticky Sender Assigned",
+              detail: `Assigned pool sender number: ${randomCode}`,
+              timestamp: new Date().toISOString()
+            });
+          }
+          selectedSender = lead.assigned_sender_number;
+        }
+      }
+    }
+    
     if (platform === "Instagram Direct" && creds.instagram.access_token) {
-      console.log(`[OUTBOUND] Dispatching Meta Graph API DM to Instagram @${handle}: "${draft.text}"`);
+      console.log(`[OUTBOUND] Dispatching Meta Graph API DM to Instagram @${handle}: "${finalMessageText}"`);
     } else if (platform === "WhatsApp Business" && creds.whatsapp.access_token) {
-      console.log(`[OUTBOUND] Dispatching WhatsApp Cloud API Message to ${handle}: "${draft.text}"`);
-    } else if (platform === "SMS Messaging" && creds.sms.auth_token) {
-      console.log(`[OUTBOUND] Dispatching SMS via Twilio API to ${conversation.phone || handle}: "${draft.text}"`);
+      console.log(`[OUTBOUND] Dispatching WhatsApp Cloud API Message to ${handle}: "${finalMessageText}"`);
+    } else if (platform === "SMS Messaging") {
+      console.log(`[OUTBOUND] Dispatching SMS via Twilio using sender ${selectedSender} to ${conversation.phone || handle}: "${finalMessageText}"`);
     } else {
       console.log(`[OUTBOUND] Simulation Mode: Message executed locally for @${handle} on ${platform}`);
+    }
+
+    if (draft.text.toLowerCase().includes("fail")) {
+      setTimeout(async () => {
+        try {
+          const freshState = ensureCollections(await readState());
+          const freshConv = freshState.conversations.find(c => c.id === conversationId);
+          if (freshConv) {
+            const freshMsg = freshConv.messages.find(m => m.id === messageId);
+            if (freshMsg) {
+              freshMsg.status = "failed";
+              freshMsg.error_code = "30007";
+              
+              const lead = freshState.leads.find(l => l.id === freshConv.lead_id);
+              if (lead) {
+                lead.timeline.push({
+                  event: "Message delivery failure",
+                  detail: `Twilio status webhook: failed (Error 30007: Carrier Violation)`,
+                  timestamp: new Date().toISOString()
+                });
+              }
+              await writeState(freshState);
+              console.log(`[SIMULATION] artificial delivery failure callback executed for msg ${messageId}`);
+            }
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }, 1500);
     }
 
     await writeState(state);
@@ -768,7 +966,7 @@ async function serveStatic(res, url) {
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
-    if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/webhooks/")) {
+    if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/webhooks/") || url.pathname.startsWith("/s/")) {
       await handleApi(req, res, url);
       return;
     }

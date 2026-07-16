@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-16T17:09:49.103Z",
+  "generated_at": "2026-07-16T20:12:17.880Z",
   "flows": [
     {
       "id": "flow_mml_growth_book_v2",
@@ -144,7 +144,7 @@
       "match": "91% (High)",
       "matchClass": "match-high",
       "status": "converted",
-      "lastActivity": "4h",
+      "lastActivity": "now",
       "tags": [
         "SMS Lead",
         "Promo Code",
@@ -180,9 +180,57 @@
           "text": "Thank you! Sent discount code confirmation.",
           "time": "07:46 AM",
           "isAI": false
+        },
+        {
+          "type": "incoming",
+          "text": "STOP",
+          "time": "01:11 PM"
+        },
+        {
+          "type": "system",
+          "text": "User has opted out from messages. Outbound gateway has blocked future dispatches."
+        },
+        {
+          "type": "outgoing",
+          "text": "You have successfully opted out. You will no longer receive messages. Reply START to opt back in.",
+          "time": "01:11 PM",
+          "status": "delivered"
+        },
+        {
+          "type": "incoming",
+          "text": "START",
+          "time": "01:11 PM"
+        },
+        {
+          "type": "system",
+          "text": "User opted back in. Outbound block removed."
+        },
+        {
+          "type": "outgoing",
+          "text": "Welcome back! You have successfully opted back into communications.",
+          "time": "01:11 PM",
+          "status": "delivered"
+        },
+        {
+          "id": "msg_4e90ce03-af66-45cf-a400-be5ed62c6060",
+          "type": "outgoing",
+          "text": "Please checkout our website: http://localhost:8888/s/lnk_73a75e",
+          "time": "01:11 PM",
+          "isAI": true,
+          "status": "sent"
+        },
+        {
+          "id": "msg_d1b6f591-07f4-4f2c-91f0-03598971a4c3",
+          "type": "outgoing",
+          "text": "Please checkout our website: http://localhost:8888/s/lnk_050d4c",
+          "time": "01:11 PM",
+          "isAI": true,
+          "status": "failed",
+          "error_code": "30007"
         }
       ],
-      "lead_id": "lead_b36121e5-a172-4a14-ae79-00c63ad6202e"
+      "lead_id": "lead_b36121e5-a172-4a14-ae79-00c63ad6202e",
+      "opted_out": false
     },
     {
       "id": "chat-4",
@@ -276,7 +324,14 @@
       "created_at": "2026-06-30T00:00:00.000Z"
     }
   ],
-  "drafts": [],
+  "drafts": [
+    {
+      "id": "draft_fe0144fc-fcea-4ca5-9947-b2764d8c96c3",
+      "conversation_id": "chat-3",
+      "text": "This is an outbound campaign message to buy our growth book: https://mml-checkout.com/growth-book",
+      "created_at": "2026-07-16T20:11:17.857Z"
+    }
+  ],
   "leads": [
     {
       "id": "lead_b36121e5-a172-4a14-ae79-00c63ad6202e",
@@ -325,9 +380,30 @@
           "event": "Lead profile created",
           "detail": "Initial contact on SMS Messaging (+1 (310) 902-1244)",
           "timestamp": "2026-07-16T16:47:07.756Z"
+        },
+        {
+          "event": "Opt-out requested",
+          "detail": "Carrier STOP keyword match: \"STOP\"",
+          "timestamp": "2026-07-16T20:11:11.743Z"
+        },
+        {
+          "event": "Opt-in requested",
+          "detail": "Carrier START keyword match: \"START\"",
+          "timestamp": "2026-07-16T20:11:24.106Z"
+        },
+        {
+          "event": "Message delivery failure",
+          "detail": "Twilio status webhook: failed (Error 30007: Carrier Violation)",
+          "timestamp": "2026-07-16T20:11:56.554Z"
+        },
+        {
+          "event": "Short link clicked",
+          "detail": "Target URL: http://google.com/test-fail (Code: lnk_050d4c, Total clicks: 1)",
+          "timestamp": "2026-07-16T20:12:17.876Z"
         }
       ],
-      "created_at": "2026-07-16T16:47:07.756Z"
+      "created_at": "2026-07-16T16:47:07.756Z",
+      "opted_out": false
     },
     {
       "id": "lead_57be83d9-1c3b-4788-8402-64f3a3a7888c",
@@ -401,6 +477,22 @@
         }
       ],
       "created_at": "2026-07-16T17:09:49.103Z"
+    }
+  ],
+  "short_links": [
+    {
+      "code": "lnk_73a75e",
+      "url": "http://google.com/test-fail",
+      "lead_id": "lead_b36121e5-a172-4a14-ae79-00c63ad6202e",
+      "clicks": 0,
+      "created_at": "2026-07-16T20:11:29.967Z"
+    },
+    {
+      "code": "lnk_050d4c",
+      "url": "http://google.com/test-fail",
+      "lead_id": "lead_b36121e5-a172-4a14-ae79-00c63ad6202e",
+      "clicks": 1,
+      "created_at": "2026-07-16T20:11:55.025Z"
     }
   ]
 }
