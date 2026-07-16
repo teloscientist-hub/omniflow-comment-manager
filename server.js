@@ -529,6 +529,21 @@ async function handleApi(req, res, url) {
     return sendJson(res, 200, { ok: true });
   }
 
+  function calculateSlaDeadline(state, conversation, intent) {
+    let minutes = 60;
+    const lead = state.leads.find(l => l.id === conversation.lead_id);
+    if (lead && lead.location && lead.location.toLowerCase().includes("enterprise")) {
+      minutes = 10;
+    } else if (intent === "Sales Inquiry") {
+      minutes = 15;
+    } else if (intent === "Support Request") {
+      minutes = 30;
+    } else if (intent === "Compliance") {
+      minutes = 5;
+    }
+    return new Date(Date.now() + minutes * 60 * 1000).toISOString();
+  }
+
   function classifyMessageSentimentAndIntent(text) {
     const t = text.toLowerCase();
     let sentiment = "Neutral";
@@ -607,6 +622,7 @@ async function handleApi(req, res, url) {
     const classification = classifyMessageSentimentAndIntent(text);
     conversation.sentiment = classification.sentiment;
     conversation.intent = classification.intent;
+    conversation.sla_deadline = calculateSlaDeadline(state, conversation, classification.intent);
     if (Array.isArray(conversation.tags)) {
       classification.tags.forEach(t => {
         if (!conversation.tags.includes(t)) conversation.tags.push(t);
@@ -887,6 +903,9 @@ async function handleApi(req, res, url) {
 
     conversation.messages.push(message);
     conversation.lastActivity = "now";
+    if (message.type === "outgoing") {
+      conversation.sla_deadline = null;
+    }
 
     await writeState(state);
     return sendJson(res, 201, { conversation, message });
@@ -976,6 +995,7 @@ async function handleApi(req, res, url) {
 
     conversation.messages.push(message);
     conversation.lastActivity = "now";
+    conversation.sla_deadline = null;
     
     const creds = await readCredentials();
     const handle = conversation.name;

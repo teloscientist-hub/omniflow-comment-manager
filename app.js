@@ -300,6 +300,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderConversationList() {
         const chats = Object.values(chatsData);
+        
+        // Sort conversations by SLA deadline urgency (unanswered SLAs first, ascending by earliest)
+        chats.sort((a, b) => {
+            const aHasSla = !!a.sla_deadline;
+            const bHasSla = !!b.sla_deadline;
+            
+            if (aHasSla && bHasSla) {
+                return new Date(a.sla_deadline) - new Date(b.sla_deadline);
+            }
+            if (aHasSla && !bHasSla) return -1;
+            if (!aHasSla && bHasSla) return 1;
+            return 0;
+        });
+
         chatsScroller.replaceChildren();
         chats.forEach((chat) => {
             const item = createEl('div', `chat-item ${chat.id === activeChatId ? 'active' : ''}`);
@@ -313,7 +327,25 @@ document.addEventListener('DOMContentLoaded', () => {
             meta.appendChild(badge);
             meta.appendChild(createEl('span', 'chat-name', chat.name));
             header.appendChild(meta);
-            header.appendChild(createEl('span', 'time', chat.lastActivity || ''));
+            
+            const timeContainer = createEl('div', null);
+            timeContainer.style.display = 'flex';
+            timeContainer.style.alignItems = 'center';
+            timeContainer.style.gap = '6px';
+            
+            timeContainer.appendChild(createEl('span', 'time', chat.lastActivity || ''));
+            
+            if (chat.sla_deadline) {
+                const slaBadge = createEl('span', 'sla-timer-badge', 'SLA');
+                slaBadge.dataset.deadline = chat.sla_deadline;
+                slaBadge.style.fontSize = '9px';
+                slaBadge.style.padding = '2px 6px';
+                slaBadge.style.borderRadius = '4px';
+                slaBadge.style.fontWeight = 'bold';
+                slaBadge.style.display = 'inline-block';
+                timeContainer.appendChild(slaBadge);
+            }
+            header.appendChild(timeContainer);
 
             item.appendChild(header);
             item.appendChild(createEl('p', 'last-msg', lastMessage(chat)));
@@ -322,6 +354,37 @@ document.addEventListener('DOMContentLoaded', () => {
             chatsScroller.appendChild(item);
         });
         chatItems = document.querySelectorAll('.chat-item');
+        updateLiveSlaTimers();
+    }
+
+    function updateLiveSlaTimers() {
+        document.querySelectorAll('.sla-timer-badge').forEach(badge => {
+            const deadlineStr = badge.dataset.deadline;
+            if (!deadlineStr) return;
+            
+            const remainingMs = new Date(deadlineStr) - new Date();
+            if (remainingMs <= 0) {
+                badge.textContent = 'BREACHED';
+                badge.style.background = 'rgba(239, 68, 68, 0.15)';
+                badge.style.color = '#ef4444';
+                badge.style.border = '1px solid #ef4444';
+            } else {
+                const totalSec = Math.floor(remainingMs / 1000);
+                const mins = Math.floor(totalSec / 60);
+                const secs = totalSec % 60;
+                badge.textContent = `${mins}m ${secs}s`;
+                
+                if (mins < 5) {
+                    badge.style.background = 'rgba(245, 158, 11, 0.15)';
+                    badge.style.color = '#f59e0b';
+                    badge.style.border = '1px solid #f59e0b';
+                } else {
+                    badge.style.background = 'rgba(107, 114, 128, 0.15)';
+                    badge.style.color = 'var(--muted)';
+                    badge.style.border = '1px solid var(--border)';
+                }
+            }
+        });
     }
 
     let scheduledPostsData = [];
@@ -1468,6 +1531,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    setInterval(updateLiveSlaTimers, 1000);
 
     loadApiState();
 });
