@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-16T16:47:09.526Z",
+  "generated_at": "2026-07-16T17:09:49.103Z",
   "flows": [
     {
       "id": "flow_mml_growth_book_v2",
@@ -229,6 +229,36 @@
         }
       ],
       "lead_id": "lead_57be83d9-1c3b-4788-8402-64f3a3a7888c"
+    },
+    {
+      "id": "chat_af381e7f-a742-4bab-a5d3-f1ff41ad2648",
+      "name": "ig_test_user",
+      "platform": "Instagram Direct",
+      "channel": "instagram",
+      "avatar": "IG",
+      "fullName": "ig_test_user",
+      "email": null,
+      "phone": null,
+      "location": "Global",
+      "match": "Resolved (Webhook)",
+      "matchClass": "match-high",
+      "status": "open",
+      "lastActivity": "now",
+      "tags": [
+        "Webhook Capture"
+      ],
+      "attribution": {
+        "origin_post_id": null,
+        "origin_source_id": null
+      },
+      "messages": [
+        {
+          "type": "incoming",
+          "text": "Hi there, verify me!",
+          "time": "10:09 AM"
+        }
+      ],
+      "lead_id": "lead_a7a9795b-d7bc-4509-bcb0-2e23094de40f"
     }
   ],
   "conversions": [],
@@ -343,6 +373,34 @@
         }
       ],
       "created_at": "2026-07-16T16:47:07.756Z"
+    },
+    {
+      "id": "lead_a7a9795b-d7bc-4509-bcb0-2e23094de40f",
+      "full_name": "ig_test_user",
+      "email": null,
+      "phone": null,
+      "location": "Global",
+      "tags": [
+        "Webhook Capture"
+      ],
+      "channels": [
+        {
+          "platform": "Instagram Direct",
+          "handle": "ig_test_user"
+        }
+      ],
+      "attribution": {
+        "origin_post_id": null,
+        "origin_source_id": null
+      },
+      "timeline": [
+        {
+          "event": "Lead profile created",
+          "detail": "Initial contact on Instagram Direct (ig_test_user)",
+          "timestamp": "2026-07-16T17:09:49.103Z"
+        }
+      ],
+      "created_at": "2026-07-16T17:09:49.103Z"
     }
   ]
 }

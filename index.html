@@ -49,6 +49,10 @@
                     <i class="fa-solid fa-table-list"></i>
                     <span>Feature Matrix</span>
                 </button>
+                <button class="nav-item" data-tab="api-connectors">
+                    <i class="fa-solid fa-circle-nodes"></i>
+                    <span>API Connectors</span>
+                </button>
             </nav>
             
             <div class="sidebar-footer">
@@ -643,6 +647,89 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </section>
+
+            <!-- Tab Content Pane: API Connectors Settings -->
+            <section class="tab-pane" id="api-connectors-pane">
+                <div class="pane-header">
+                    <div>
+                        <h1>Platform API Connectors</h1>
+                        <p>Configure live API keys and webhook details for Instagram Graph API, WhatsApp Cloud Business, and Twilio SMS gateways.</p>
+                    </div>
+                </div>
+
+                <div class="analysis-summary-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+                    <!-- Instagram Form Card -->
+                    <div class="summary-card glass-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <h3 style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: var(--accent);"><i class="fa-brands fa-instagram"></i> Instagram DM Adapter</h3>
+                            <p style="font-size: 12px; color: var(--muted); margin-bottom: 16px;">Meta Graph API verification settings for commenting automation & story mention capture.</p>
+                            
+                            <div class="form-group" style="margin-bottom: 12px;">
+                                <label style="font-size: 11px; font-weight: 600; color: var(--text); display: block; margin-bottom: 4px;">Verify Token</label>
+                                <input type="text" id="ig-verify-token" style="width: 100%; padding: 6px 10px; font-size: 12px; background: var(--panel-1); border: 1px solid var(--border); border-radius: 4px; color: var(--text);">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 12px;">
+                                <label style="font-size: 11px; font-weight: 600; color: var(--text); display: block; margin-bottom: 4px;">Page Access Token</label>
+                                <input type="password" id="ig-access-token" style="width: 100%; padding: 6px 10px; font-size: 12px; background: var(--panel-1); border: 1px solid var(--border); border-radius: 4px; color: var(--text);">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size: 11px; font-weight: 600; color: var(--text); display: block; margin-bottom: 4px;">Live Webhook URL Callback</label>
+                                <code style="font-size: 10px; color: var(--muted); background: var(--panel-1); padding: 4px 8px; border-radius: 4px; display: block; border: 1px solid var(--border);">http://localhost:8888/webhooks/instagram</code>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- WhatsApp Form Card -->
+                    <div class="summary-card glass-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <h3 style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: #25d366;"><i class="fa-brands fa-whatsapp"></i> WhatsApp Cloud Adapter</h3>
+                            <p style="font-size: 12px; color: var(--muted); margin-bottom: 16px;">Meta Cloud API credentials for business broadcasting channels and automation routing.</p>
+                            
+                            <div class="form-group" style="margin-bottom: 12px;">
+                                <label style="font-size: 11px; font-weight: 600; color: var(--text); display: block; margin-bottom: 4px;">Phone Number ID</label>
+                                <input type="text" id="wa-phone-id" style="width: 100%; padding: 6px 10px; font-size: 12px; background: var(--panel-1); border: 1px solid var(--border); border-radius: 4px; color: var(--text);">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 12px;">
+                                <label style="font-size: 11px; font-weight: 600; color: var(--text); display: block; margin-bottom: 4px;">System User Access Token</label>
+                                <input type="password" id="wa-access-token" style="width: 100%; padding: 6px 10px; font-size: 12px; background: var(--panel-1); border: 1px solid var(--border); border-radius: 4px; color: var(--text);">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size: 11px; font-weight: 600; color: var(--text); display: block; margin-bottom: 4px;">Live Webhook URL Callback</label>
+                                <code style="font-size: 10px; color: var(--muted); background: var(--panel-1); padding: 4px 8px; border-radius: 4px; display: block; border: 1px solid var(--border);">http://localhost:8888/webhooks/whatsapp</code>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Twilio Form Card -->
+                    <div class="summary-card glass-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <h3 style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: #f22f46;"><i class="fa-solid fa-sms"></i> Twilio SMS Adapter</h3>
+                            <p style="font-size: 12px; color: var(--muted); margin-bottom: 16px;">Twilio credentials for outbound marketing campaigns and customer callback notification fallbacks.</p>
+                            
+                            <div class="form-group" style="margin-bottom: 12px;">
+                                <label style="font-size: 11px; font-weight: 600; color: var(--text); display: block; margin-bottom: 4px;">Account SID</label>
+                                <input type="text" id="sms-sid" style="width: 100%; padding: 6px 10px; font-size: 12px; background: var(--panel-1); border: 1px solid var(--border); border-radius: 4px; color: var(--text);">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 12px;">
+                                <label style="font-size: 11px; font-weight: 600; color: var(--text); display: block; margin-bottom: 4px;">Auth Token</label>
+                                <input type="password" id="sms-token" style="width: 100%; padding: 6px 10px; font-size: 12px; background: var(--panel-1); border: 1px solid var(--border); border-radius: 4px; color: var(--text);">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 12px;">
+                                <label style="font-size: 11px; font-weight: 600; color: var(--text); display: block; margin-bottom: 4px;">Twilio Phone Number</label>
+                                <input type="text" id="sms-phone" style="width: 100%; padding: 6px 10px; font-size: 12px; background: var(--panel-1); border: 1px solid var(--border); border-radius: 4px; color: var(--text);">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size: 11px; font-weight: 600; color: var(--text); display: block; margin-bottom: 4px;">Live Webhook URL Callback</label>
+                                <code style="font-size: 10px; color: var(--muted); background: var(--panel-1); padding: 4px 8px; border-radius: 4px; display: block; border: 1px solid var(--border);">http://localhost:8888/webhooks/sms</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; margin-top: 24px;">
+                    <button class="btn btn-primary" id="btn-save-connectors"><i class="fa-solid fa-cloud-arrow-up"></i> Save API Configurations</button>
                 </div>
             </section>
         </main>

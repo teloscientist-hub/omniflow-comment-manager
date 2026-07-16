@@ -953,6 +953,18 @@ document.addEventListener('DOMContentLoaded', () => {
             renderAnalyticsOverview();
             renderHandoffStatus();
             renderFlowSelector();
+
+            apiFetch('/api/connectors').then(creds => {
+                if (document.getElementById('ig-verify-token')) {
+                    document.getElementById('ig-verify-token').value = creds.instagram?.verify_token || '';
+                    document.getElementById('ig-access-token').value = creds.instagram?.access_token || '';
+                    document.getElementById('wa-phone-id').value = creds.whatsapp?.phone_number_id || '';
+                    document.getElementById('wa-access-token').value = creds.whatsapp?.access_token || '';
+                    document.getElementById('sms-sid').value = creds.sms?.account_sid || '';
+                    document.getElementById('sms-token').value = creds.sms?.auth_token || '';
+                    document.getElementById('sms-phone').value = creds.sms?.phone_number || '';
+                }
+            }).catch(err => console.error(err));
         } catch (error) {
             console.error(error);
             renderConversationList();
@@ -1087,6 +1099,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } catch (error) {
                 showActionStatus(`Failed to send draft: ${error.message}`, 'error');
+            }
+        });
+    }
+
+    // Save API Connectors Configuration
+    const btnSaveConnectors = document.getElementById('btn-save-connectors');
+    if (btnSaveConnectors) {
+        btnSaveConnectors.addEventListener('click', async () => {
+            const payload = {
+                instagram: {
+                    verify_token: document.getElementById('ig-verify-token').value.trim(),
+                    access_token: document.getElementById('ig-access-token').value.trim()
+                },
+                whatsapp: {
+                    phone_number_id: document.getElementById('wa-phone-id').value.trim(),
+                    access_token: document.getElementById('wa-access-token').value.trim()
+                },
+                sms: {
+                    account_sid: document.getElementById('sms-sid').value.trim(),
+                    auth_token: document.getElementById('sms-token').value.trim(),
+                    phone_number: document.getElementById('sms-phone').value.trim()
+                }
+            };
+            
+            showActionStatus('Saving API configurations...');
+            try {
+                await apiFetch('/api/connectors', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                showActionStatus('API configurations updated successfully.');
+            } catch (error) {
+                showActionStatus(`Failed to save config: ${error.message}`, 'error');
             }
         });
     }
