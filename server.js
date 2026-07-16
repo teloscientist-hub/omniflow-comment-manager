@@ -503,6 +503,34 @@ async function handleApi(req, res, url) {
     return sendJson(res, 200, { ok: true });
   }
 
+  function classifyMessageSentimentAndIntent(text) {
+    const t = text.toLowerCase();
+    let sentiment = "Neutral";
+    let intent = "Inquiry";
+    let tags = [];
+
+    if (t.includes("awesome") || t.includes("great") || t.includes("love") || t.includes("good") || t.includes("amazing") || t.includes("perfect") || t.includes("interested") || t.includes("buy")) {
+      sentiment = "Positive";
+    } else if (t.includes("bad") || t.includes("angry") || t.includes("broken") || t.includes("fail") || t.includes("sucks") || t.includes("error") || t.includes("annoyed") || t.includes("stop")) {
+      sentiment = "Negative";
+    }
+
+    if (t.includes("price") || t.includes("cost") || t.includes("pricing") || t.includes("buy") || t.includes("discount") || t.includes("promo") || t.includes("how much")) {
+      intent = "Sales Inquiry";
+      tags.push("Warm Lead");
+    } else if (t.includes("help") || t.includes("support") || t.includes("broken") || t.includes("error") || t.includes("fail") || t.includes("not working")) {
+      intent = "Support Request";
+      tags.push("Support Needed");
+    } else if (t.includes("opt out") || t.includes("stop") || t.includes("unsubscribe")) {
+      intent = "Compliance";
+      tags.push("Opt-Out Request");
+    } else if (t.includes("hello") || t.includes("hi") || t.includes("hey")) {
+      intent = "Greeting";
+    }
+
+    return { sentiment, intent, tags };
+  }
+
   if (req.method === "POST" && (url.pathname === "/webhooks/instagram" || url.pathname === "/webhooks/whatsapp" || url.pathname === "/webhooks/sms")) {
     const payload = await readJsonBody(req);
     console.log(`Received Webhook callback on ${url.pathname}:`, JSON.stringify(payload));
@@ -550,6 +578,17 @@ async function handleApi(req, res, url) {
       state.conversations.push(conversation);
     }
     
+    const classification = classifyMessageSentimentAndIntent(text);
+    conversation.sentiment = classification.sentiment;
+    conversation.intent = classification.intent;
+    if (Array.isArray(conversation.tags)) {
+      classification.tags.forEach(t => {
+        if (!conversation.tags.includes(t)) conversation.tags.push(t);
+      });
+    } else {
+      conversation.tags = ["Webhook Capture", ...classification.tags];
+    }
+
     conversation.messages.push({
       type: "incoming",
       text,

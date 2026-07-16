@@ -198,6 +198,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleAiBtn = document.getElementById('toggle-ai');
     const complianceBlockBanner = document.getElementById('compliance-block-banner');
     const verifiedSmsBadge = document.getElementById('verified-sms-badge');
+    const chatSentimentBadge = document.getElementById('chat-sentiment-badge');
+    const chatIntentBadge = document.getElementById('chat-intent-badge');
     const agentCollisionBanner = document.getElementById('agent-collision-banner');
     const collidingAgentsList = document.getElementById('colliding-agents-list');
     const logContentRequestBtn = document.getElementById('log-content-request');
@@ -522,6 +524,45 @@ document.addEventListener('DOMContentLoaded', () => {
             chatInput.disabled = false;
             sendBtn.disabled = false;
             chatInput.placeholder = isAiPaused ? 'Type a message (Human takeover active)...' : 'Type a message (AI is currently handling)...';
+        }
+
+        // Update Sentiment and Intent badges
+        if (chatSentimentBadge) {
+            const sentiment = chat.sentiment || 'NEUTRAL';
+            chatSentimentBadge.textContent = sentiment;
+            
+            if (sentiment.toUpperCase() === 'POSITIVE') {
+                chatSentimentBadge.style.background = 'rgba(54, 194, 147, 0.15)';
+                chatSentimentBadge.style.color = '#36c293';
+                chatSentimentBadge.style.border = '1px solid #36c293';
+            } else if (sentiment.toUpperCase() === 'NEGATIVE') {
+                chatSentimentBadge.style.background = 'rgba(239, 68, 68, 0.15)';
+                chatSentimentBadge.style.color = '#ef4444';
+                chatSentimentBadge.style.border = '1px solid #ef4444';
+            } else {
+                chatSentimentBadge.style.background = 'rgba(107, 114, 128, 0.15)';
+                chatSentimentBadge.style.color = 'var(--muted)';
+                chatSentimentBadge.style.border = '1px solid var(--border)';
+            }
+        }
+
+        if (chatIntentBadge) {
+            const intent = chat.intent || 'INQUIRY';
+            chatIntentBadge.textContent = intent;
+            
+            if (intent.toUpperCase() === 'SUPPORT REQUEST' || intent.toUpperCase() === 'COMPLIANCE') {
+                chatIntentBadge.style.background = 'rgba(245, 158, 11, 0.15)';
+                chatIntentBadge.style.color = '#f59e0b';
+                chatIntentBadge.style.border = '1px solid #f59e0b';
+            } else if (intent.toUpperCase() === 'SALES INQUIRY') {
+                chatIntentBadge.style.background = 'rgba(59, 130, 246, 0.15)';
+                chatIntentBadge.style.color = '#3b82f6';
+                chatIntentBadge.style.border = '1px solid #3b82f6';
+            } else {
+                chatIntentBadge.style.background = 'var(--panel-2)';
+                chatIntentBadge.style.color = 'var(--text)';
+                chatIntentBadge.style.border = '1px solid var(--border)';
+            }
         }
 
         if (verifiedSmsBadge) {
