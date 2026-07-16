@@ -204,10 +204,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const contentTopicInput = document.getElementById('content-topic-input');
     const conversionAmountInput = document.getElementById('conversion-amount-input');
     let flowCatalog = [];
+    let activeFlowId = null;
     let conversionsData = [];
     let contentRequestsData = [];
     let statusData = null;
     let triggersData = null;
+
+    const flowSelect = document.getElementById('flow-select');
+    const btnNewFlow = document.getElementById('btn-new-flow');
+    const btnDeleteFlow = document.getElementById('btn-delete-flow');
+    const flowNameInput = document.getElementById('flow-name-input');
+    const flowKeywordInput = document.getElementById('flow-keyword-input');
+    const flowResponseInput = document.getElementById('flow-response-input');
     
     // Profile Panel Elements
     const avatarLarge = document.querySelector('.avatar-large');
@@ -621,28 +629,112 @@ document.addEventListener('DOMContentLoaded', () => {
         showActionStatus(`New Step #${nodeCount} appended to flow builder canvas.`);
     });
 
-    // Simulated Save/Deploy Flow
+    // Save/Deploy Flow (PATCH to active flow ID)
     const btnSaveFlow = document.getElementById('btn-save-flow');
     btnSaveFlow.addEventListener('click', async () => {
-        const flow = flowCatalog[0] || { id: 'flow_mml_growth_book_v2', name: 'MML Growth Book Flow', default_trigger_keyword: 'GROWTH' };
+        if (!activeFlowId) {
+            showActionStatus('No active flow selected to save.', 'error');
+            return;
+        }
+        
+        const payload = {
+            name: flowNameInput.value.trim() || 'Unnamed Flow',
+            default_trigger_keyword: flowKeywordInput.value.trim() || 'TRIGGER',
+            response_text: flowResponseInput.value.trim() || ''
+        };
+        
+        showActionStatus(`Saving flow changes...`);
         try {
+            await apiFetch(`/api/flows/${activeFlowId}`, {
+                method: 'PATCH',
+                body: JSON.stringify(payload)
+            });
+            
+            // Also register trigger
             const trigger = await apiFetch('/api/triggers/register', {
                 method: 'POST',
                 body: JSON.stringify({
                     post_id: 'ig_post_demo_004',
                     source_id: 'youtube-demo-growth-strategy',
-                    trigger_keyword: flow.default_trigger_keyword || 'GROWTH',
-                    flow_id: flow.id,
-                    flow_name: flow.name,
+                    trigger_keyword: payload.default_trigger_keyword,
+                    flow_id: activeFlowId,
+                    flow_name: payload.name,
                     status: 'active'
                 })
             });
+            
             await loadApiState();
-            showActionStatus(`Message Manager trigger registered: ${trigger.trigger_keyword} -> ${trigger.flow_name}`);
+            showActionStatus(`Flow "${payload.name}" deployed and trigger registered: "${payload.default_trigger_keyword}"`);
         } catch (error) {
             showActionStatus(`Could not deploy flow: ${error.message}`, 'error');
         }
     });
+
+    // Create New Flow
+    if (btnNewFlow) {
+        btnNewFlow.addEventListener('click', async () => {
+            const name = prompt('Enter a name for the new flow:', 'New Campaign Flow');
+            if (name === null) return;
+            const flowName = name.trim() || 'New Flow';
+            const triggerKeyword = prompt('Enter trigger keyword for this flow:', 'GROW');
+            if (triggerKeyword === null) return;
+            const kw = triggerKeyword.trim() || 'PROMO';
+            const text = prompt('Enter response DM message:', 'Here is your link: mml-checkout.com/promo');
+            if (text === null) return;
+            
+            showActionStatus('Creating new flow...');
+            try {
+                const newFlow = await apiFetch('/api/flows', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        name: flowName,
+                        default_trigger_keyword: kw,
+                        response_text: text.trim(),
+                        status: 'active'
+                    })
+                });
+                activeFlowId = newFlow.id;
+                await loadApiState();
+                showActionStatus(`Created new flow: "${newFlow.name}"`);
+            } catch (error) {
+                showActionStatus(`Could not create flow: ${error.message}`, 'error');
+            }
+        });
+    }
+
+    // Delete Flow
+    if (btnDeleteFlow) {
+        btnDeleteFlow.addEventListener('click', async () => {
+            if (!activeFlowId) return;
+            if (!confirm('Are you sure you want to delete this flow? This cannot be undone.')) return;
+            
+            showActionStatus('Deleting flow...');
+            try {
+                await apiFetch(`/api/flows/${activeFlowId}`, {
+                    method: 'DELETE'
+                });
+                activeFlowId = null;
+                await loadApiState();
+                showActionStatus('Flow deleted successfully.');
+            } catch (error) {
+                showActionStatus(`Could not delete flow: ${error.message}`, 'error');
+            }
+        });
+    }
+
+    // Flow Select dropdown change
+    if (flowSelect) {
+        flowSelect.addEventListener('change', (e) => {
+            activeFlowId = e.target.value;
+            const activeFlow = flowCatalog.find(f => f.id === activeFlowId);
+            if (activeFlow) {
+                flowNameInput.value = activeFlow.name || '';
+                flowKeywordInput.value = activeFlow.default_trigger_keyword || '';
+                flowResponseInput.value = activeFlow.response_text || '';
+                updateFlowCanvas(activeFlow);
+            }
+        });
+    }
 
     // -------------------------------------------------------------
     // Lead Enrichment Export Action
@@ -824,12 +916,50 @@ document.addEventListener('DOMContentLoaded', () => {
             updateProfilePanel(activeChatId);
             renderAnalyticsOverview();
             renderHandoffStatus();
+            renderFlowSelector();
         } catch (error) {
             console.error(error);
             renderConversationList();
             renderLeadsTable();
             renderAnalyticsOverview();
             renderHandoffStatus();
+        }
+    }
+
+    function renderFlowSelector() {
+        if (!flowSelect) return;
+        
+        flowSelect.innerHTML = flowCatalog.map(flow => `
+            <option value="${flow.id}" ${flow.id === activeFlowId ? 'selected' : ''}>${flow.name}</option>
+        `).join('');
+        
+        if (!activeFlowId && flowCatalog.length > 0) {
+            activeFlowId = flowCatalog[0].id;
+            flowSelect.value = activeFlowId;
+        }
+        
+        const activeFlow = flowCatalog.find(f => f.id === activeFlowId);
+        if (activeFlow) {
+            flowNameInput.value = activeFlow.name || '';
+            flowKeywordInput.value = activeFlow.default_trigger_keyword || '';
+            flowResponseInput.value = activeFlow.response_text || '';
+            updateFlowCanvas(activeFlow);
+        } else {
+            flowNameInput.value = '';
+            flowKeywordInput.value = '';
+            flowResponseInput.value = '';
+        }
+    }
+
+    function updateFlowCanvas(flow) {
+        const node1Body = document.querySelector('#node-1 .node-body');
+        if (node1Body) {
+            node1Body.innerHTML = `<p>If post comment contains: <strong>"${flow.default_trigger_keyword || 'GROWTH'}"</strong></p>`;
+        }
+        
+        const node4Body = document.querySelector('#node-4 .node-body');
+        if (node4Body) {
+            node4Body.innerHTML = `<p>Send checkout link to user: <em>"${flow.response_text || ''}"</em></p>`;
         }
     }
 

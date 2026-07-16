@@ -163,6 +163,30 @@
                         <button class="btn btn-primary" id="btn-save-flow"><i class="fa-solid fa-floppy-disk"></i> Deploy Flow</button>
                     </div>
                 </div>
+                
+                <div class="flow-selector-bar glass-card" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 12px; margin-bottom: 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel-2);">
+                    <div class="form-group" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <label for="flow-select" style="font-size: 12px; font-weight: 600; color: var(--muted); margin: 0; white-space: nowrap;">Active Flow:</label>
+                        <select id="flow-select" style="background: var(--panel-1); border: 1px solid var(--border); color: var(--text); border-radius: 4px; padding: 4px 8px; font-size: 12px; height: 28px; min-height: 28px;"></select>
+                    </div>
+                    <button class="btn btn-outline" id="btn-new-flow" style="font-size: 11px; padding: 0 10px; height: 28px; min-height: 28px;"><i class="fa-solid fa-plus"></i> New Flow</button>
+                    <button class="btn btn-outline" id="btn-delete-flow" style="font-size: 11px; padding: 0 10px; height: 28px; min-height: 28px; border-color: #f87171; color: #f87171;"><i class="fa-solid fa-trash"></i> Delete</button>
+                    
+                    <div style="flex: 1; min-width: 12px;"></div>
+                    
+                    <div class="form-group" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <label for="flow-name-input" style="font-size: 12px; font-weight: 600; color: var(--muted); margin: 0;">Name:</label>
+                        <input type="text" id="flow-name-input" style="background: var(--panel-1); border: 1px solid var(--border); color: var(--text); border-radius: 4px; padding: 4px 8px; font-size: 12px; width: 140px; height: 28px; min-height: 28px;">
+                    </div>
+                    <div class="form-group" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <label for="flow-keyword-input" style="font-size: 12px; font-weight: 600; color: var(--muted); margin: 0;">Keyword:</label>
+                        <input type="text" id="flow-keyword-input" style="background: var(--panel-1); border: 1px solid var(--border); color: var(--text); border-radius: 4px; padding: 4px 8px; font-size: 12px; width: 80px; height: 28px; min-height: 28px;">
+                    </div>
+                    <div class="form-group" style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <label for="flow-response-input" style="font-size: 12px; font-weight: 600; color: var(--muted); margin: 0;">Response DM:</label>
+                        <input type="text" id="flow-response-input" style="background: var(--panel-1); border: 1px solid var(--border); color: var(--text); border-radius: 4px; padding: 4px 8px; font-size: 12px; width: 220px; height: 28px; min-height: 28px;">
+                    </div>
+                </div>
 
                 <!-- Canvas Grid Layout -->
                 <div class="builder-canvas glass-card">

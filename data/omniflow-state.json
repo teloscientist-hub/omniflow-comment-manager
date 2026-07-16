@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-06-30T00:00:00.000Z",
+  "generated_at": "2026-07-16T11:38:51.756Z",
   "flows": [
     {
       "id": "flow_mml_growth_book_v2",
@@ -19,6 +19,13 @@
       "name": "Human Takeover Support Flow",
       "default_trigger_keyword": "HELP",
       "status": "draft"
+    },
+    {
+      "id": "flow_02f707e1-514c-46d4-bb35-a50a0a36d4e2",
+      "name": "New Test Flow",
+      "default_trigger_keyword": "TEST",
+      "status": "active",
+      "response_text": "Hello from local simulation!"
     }
   ],
   "triggers": [],

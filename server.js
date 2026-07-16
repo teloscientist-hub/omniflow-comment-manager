@@ -234,6 +234,49 @@ async function handleApi(req, res, url) {
     return sendJson(res, 200, state.flows);
   }
 
+  if (req.method === "GET" && url.pathname.startsWith("/api/flows/")) {
+    const id = url.pathname.split("/").pop();
+    const flow = state.flows.find((item) => item.id === id);
+    if (!flow) return sendError(res, 404, "flow not found");
+    return sendJson(res, 200, flow);
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/flows") {
+    const payload = await readJsonBody(req);
+    const flow = {
+      id: payload.id || `flow_${randomUUID()}`,
+      name: payload.name || "Unnamed Flow",
+      default_trigger_keyword: payload.default_trigger_keyword || "TRIGGER",
+      status: payload.status || "active",
+      response_text: payload.response_text || "Thank you for connecting!"
+    };
+    state.flows.push(flow);
+    await writeState(state);
+    return sendJson(res, 201, flow);
+  }
+
+  if (req.method === "PATCH" && url.pathname.startsWith("/api/flows/")) {
+    const id = url.pathname.split("/").pop();
+    const existingIndex = state.flows.findIndex((item) => item.id === id);
+    if (existingIndex < 0) return sendError(res, 404, "flow not found");
+    const payload = await readJsonBody(req);
+    state.flows[existingIndex] = {
+      ...state.flows[existingIndex],
+      ...payload
+    };
+    await writeState(state);
+    return sendJson(res, 200, state.flows[existingIndex]);
+  }
+
+  if (req.method === "DELETE" && url.pathname.startsWith("/api/flows/")) {
+    const id = url.pathname.split("/").pop();
+    const existingIndex = state.flows.findIndex((item) => item.id === id);
+    if (existingIndex < 0) return sendError(res, 404, "flow not found");
+    const deleted = state.flows.splice(existingIndex, 1)[0];
+    await writeState(state);
+    return sendJson(res, 200, deleted);
+  }
+
   if (req.method === "GET" && url.pathname === "/api/triggers") {
     return sendJson(res, 200, {
       generated_at: state.generated_at,
