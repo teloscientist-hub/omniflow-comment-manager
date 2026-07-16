@@ -372,6 +372,20 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <!-- Drafts Review Panel -->
+                        <div id="drafts-review-container" class="glass-card" style="display: none; padding: 12px; margin: 12px; background: rgba(245, 158, 11, 0.08); border: 1px dashed var(--accent); border-radius: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="font-size: 11px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px;">Pending Outbound Draft (AI-Generated)</span>
+                                <span style="font-size: 10px; color: var(--muted);" id="draft-time-meta">Created just now</span>
+                            </div>
+                            <textarea id="draft-edit-textarea" style="width: 100%; min-height: 50px; background: var(--panel-1); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 8px; font-size: 12px; resize: vertical; margin-bottom: 8px; font-family: inherit; outline: none;"></textarea>
+                            <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                                <button class="btn btn-outline" id="btn-reject-draft" style="font-size: 11px; height: 26px; min-height: 26px; border-color: #f87171; color: #f87171; padding: 0 10px;">Reject</button>
+                                <button class="btn btn-outline" id="btn-save-draft-edit" style="font-size: 11px; height: 26px; min-height: 26px; padding: 0 10px;">Save Edit</button>
+                                <button class="btn btn-primary" id="btn-approve-draft" style="font-size: 11px; height: 26px; min-height: 26px; padding: 0 12px; background: #36c293; border-color: #36c293;">Approve & Send</button>
+                            </div>
+                        </div>
 
                         <!-- Message Input Panel -->
                         <div class="message-input-area">

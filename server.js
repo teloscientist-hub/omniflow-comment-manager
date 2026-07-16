@@ -134,6 +134,7 @@ function ensureCollections(state) {
   state.conversations ||= [];
   state.conversions ||= [];
   state.content_requests ||= [];
+  state.drafts ||= [];
   return state;
 }
 
@@ -378,6 +379,80 @@ async function handleApi(req, res, url) {
 
     await writeState(state);
     return sendJson(res, 201, { conversation, message });
+  }
+
+  const draftsConvMatch = url.pathname.match(/^\/api\/conversations\/([^/]+)\/drafts$/);
+  if (draftsConvMatch && req.method === "GET") {
+    const conversationId = decodeURIComponent(draftsConvMatch[1]);
+    const list = state.drafts.filter(d => d.conversation_id === conversationId);
+    return sendJson(res, 200, list);
+  }
+
+  if (draftsConvMatch && req.method === "POST") {
+    const conversationId = decodeURIComponent(draftsConvMatch[1]);
+    const payload = await readJsonBody(req);
+    const text = String(payload.text || "").trim();
+    if (!text) return sendError(res, 400, "text is required");
+    
+    const draft = {
+      id: `draft_${randomUUID()}`,
+      conversation_id: conversationId,
+      text,
+      created_at: new Date().toISOString()
+    };
+    state.drafts.push(draft);
+    await writeState(state);
+    return sendJson(res, 201, draft);
+  }
+
+  const draftMatch = url.pathname.match(/^\/api\/conversations\/([^/]+)\/drafts\/([^/]+)$/);
+  if (draftMatch && req.method === "PATCH") {
+    const draftId = decodeURIComponent(draftMatch[2]);
+    const existingIndex = state.drafts.findIndex(d => d.id === draftId);
+    if (existingIndex < 0) return sendError(res, 404, "draft not found");
+    
+    const payload = await readJsonBody(req);
+    if (payload.text) {
+      state.drafts[existingIndex].text = String(payload.text).trim();
+    }
+    await writeState(state);
+    return sendJson(res, 200, state.drafts[existingIndex]);
+  }
+
+  if (draftMatch && req.method === "DELETE") {
+    const draftId = decodeURIComponent(draftMatch[2]);
+    const existingIndex = state.drafts.findIndex(d => d.id === draftId);
+    if (existingIndex < 0) return sendError(res, 404, "draft not found");
+    
+    const deleted = state.drafts.splice(existingIndex, 1)[0];
+    await writeState(state);
+    return sendJson(res, 200, deleted);
+  }
+
+  const approveMatch = url.pathname.match(/^\/api\/conversations\/([^/]+)\/drafts\/([^/]+)\/approve$/);
+  if (approveMatch && req.method === "POST") {
+    const conversationId = decodeURIComponent(approveMatch[1]);
+    const draftId = decodeURIComponent(approveMatch[2]);
+    
+    const existingIndex = state.drafts.findIndex(d => d.id === draftId);
+    if (existingIndex < 0) return sendError(res, 404, "draft not found");
+    
+    const draft = state.drafts.splice(existingIndex, 1)[0];
+    
+    const conversation = state.conversations.find((item) => item.id === conversationId);
+    if (!conversation) return sendError(res, 404, "conversation not found");
+    
+    const message = {
+      type: "outgoing",
+      text: draft.text,
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      isAI: true
+    };
+    conversation.messages.push(message);
+    conversation.lastActivity = "now";
+    
+    await writeState(state);
+    return sendJson(res, 200, { ok: true, message });
   }
 
   return sendError(res, 404, "api route not found");

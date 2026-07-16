@@ -216,6 +216,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const flowNameInput = document.getElementById('flow-name-input');
     const flowKeywordInput = document.getElementById('flow-keyword-input');
     const flowResponseInput = document.getElementById('flow-response-input');
+
+    const draftsReviewContainer = document.getElementById('drafts-review-container');
+    const draftEditTextarea = document.getElementById('draft-edit-textarea');
+    const btnRejectDraft = document.getElementById('btn-reject-draft');
+    const btnSaveDraftEdit = document.getElementById('btn-save-draft-edit');
+    const btnApproveDraft = document.getElementById('btn-approve-draft');
+    const draftTimeMeta = document.getElementById('draft-time-meta');
+    let activeDraft = null;
     
     // Profile Panel Elements
     const avatarLarge = document.querySelector('.avatar-large');
@@ -382,6 +390,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
+        // Load pending drafts
+        loadAndRenderDraft(chatId);
+        
         // Auto scroll to bottom
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
@@ -492,15 +503,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     toggleAiMode(true);
                 }
                 
-                const aiMessage = {
-                    type: 'outgoing',
-                    text: replyText,
-                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                    isAI: true
-                };
-                chatsData[activeChatId].messages.push(aiMessage);
-                renderMessages(activeChatId);
-                persistMessage(aiMessage).catch((error) => console.error(error));
+                apiFetch(`/api/conversations/${encodeURIComponent(activeChatId)}/drafts`, {
+                    method: 'POST',
+                    body: JSON.stringify({ text: replyText })
+                }).then(() => {
+                    renderMessages(activeChatId);
+                    showActionStatus(`AI generated a new outbound response draft for review.`);
+                }).catch(err => console.error(err));
                 
                 if (activeChatItem) {
                     activeChatItem.querySelector('p').textContent = replyText;
@@ -961,6 +970,98 @@ document.addEventListener('DOMContentLoaded', () => {
         if (node4Body) {
             node4Body.innerHTML = `<p>Send checkout link to user: <em>"${flow.response_text || ''}"</em></p>`;
         }
+    }
+    async function loadAndRenderDraft(chatId) {
+        if (!draftsReviewContainer) return;
+        
+        try {
+            const drafts = await apiFetch(`/api/conversations/${encodeURIComponent(chatId)}/drafts`);
+            if (drafts && drafts.length > 0) {
+                activeDraft = drafts[0];
+                draftEditTextarea.value = activeDraft.text;
+                
+                const timeStr = activeDraft.created_at ? activeDraft.created_at.slice(11, 16) : 'now';
+                draftTimeMeta.textContent = `Generated at ${timeStr} UTC`;
+                draftsReviewContainer.style.display = 'block';
+            } else {
+                activeDraft = null;
+                draftsReviewContainer.style.display = 'none';
+            }
+        } catch (err) {
+            console.error('Failed to load drafts:', err);
+            activeDraft = null;
+            draftsReviewContainer.style.display = 'none';
+        }
+    }
+
+    // Reject Draft click
+    if (btnRejectDraft) {
+        btnRejectDraft.addEventListener('click', async () => {
+            if (!activeDraft) return;
+            showActionStatus('Rejecting draft...');
+            try {
+                await apiFetch(`/api/conversations/${encodeURIComponent(activeChatId)}/drafts/${encodeURIComponent(activeDraft.id)}`, {
+                    method: 'DELETE'
+                });
+                showActionStatus('Draft rejected.');
+                await loadApiState();
+            } catch (error) {
+                showActionStatus(`Failed to reject draft: ${error.message}`, 'error');
+            }
+        });
+    }
+
+    // Save Draft Edit click
+    if (btnSaveDraftEdit) {
+        btnSaveDraftEdit.addEventListener('click', async () => {
+            if (!activeDraft) return;
+            const updatedText = draftEditTextarea.value.trim();
+            if (!updatedText) return;
+            
+            showActionStatus('Saving draft edits...');
+            try {
+                await apiFetch(`/api/conversations/${encodeURIComponent(activeChatId)}/drafts/${encodeURIComponent(activeDraft.id)}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ text: updatedText })
+                });
+                showActionStatus('Draft edits saved.');
+                await loadApiState();
+            } catch (error) {
+                showActionStatus(`Failed to save draft edit: ${error.message}`, 'error');
+            }
+        });
+    }
+
+    // Approve Draft click
+    if (btnApproveDraft) {
+        btnApproveDraft.addEventListener('click', async () => {
+            if (!activeDraft) return;
+            const updatedText = draftEditTextarea.value.trim();
+            if (!updatedText) return;
+            
+            showActionStatus('Approving and sending draft...');
+            try {
+                await apiFetch(`/api/conversations/${encodeURIComponent(activeChatId)}/drafts/${encodeURIComponent(activeDraft.id)}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ text: updatedText })
+                });
+                
+                await apiFetch(`/api/conversations/${encodeURIComponent(activeChatId)}/drafts/${encodeURIComponent(activeDraft.id)}/approve`, {
+                    method: 'POST',
+                    body: JSON.stringify({})
+                });
+                
+                showActionStatus('Outbound response approved and sent.');
+                await loadApiState();
+                
+                const activeChatItem = document.querySelector(`.chat-item[data-id="${activeChatId}"]`);
+                if (activeChatItem) {
+                    activeChatItem.querySelector('p').textContent = updatedText;
+                }
+            } catch (error) {
+                showActionStatus(`Failed to send draft: ${error.message}`, 'error');
+            }
+        });
     }
 
     loadApiState();
