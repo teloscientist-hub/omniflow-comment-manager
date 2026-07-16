@@ -202,6 +202,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const collidingAgentsList = document.getElementById('colliding-agents-list');
     const logContentRequestBtn = document.getElementById('log-content-request');
     const recordConversionBtn = document.getElementById('record-conversion');
+    const btnSchedulePost = document.getElementById('btn-schedule-post');
+    const schedPostText = document.getElementById('sched-post-text');
+    const schedPostTime = document.getElementById('sched-post-time');
+    const scheduledPostsList = document.getElementById('scheduled-posts-list');
+    const publishedPostsList = document.getElementById('published-posts-list');
     const leadsTableBody = document.getElementById('leads-table-body');
     const exportSmmBtn = document.getElementById('btn-export-smm');
     const actionStatus = document.getElementById('actionStatus');
@@ -315,6 +320,72 @@ document.addEventListener('DOMContentLoaded', () => {
             chatsScroller.appendChild(item);
         });
         chatItems = document.querySelectorAll('.chat-item');
+    }
+
+    let scheduledPostsData = [];
+
+    function renderScheduledPosts(posts) {
+        if (!scheduledPostsList || !publishedPostsList) return;
+        
+        const scheduled = posts.filter(p => p.status === 'scheduled');
+        const published = posts.filter(p => p.status === 'published');
+        
+        if (scheduled.length === 0) {
+            scheduledPostsList.innerHTML = `<p style="font-size: 12px; color: var(--muted); text-align: center; margin: 20px 0;">No posts currently scheduled.</p>`;
+        } else {
+            scheduled.sort((a, b) => new Date(a.scheduledTime) - new Date(b.scheduledTime));
+            scheduledPostsList.innerHTML = scheduled.map(post => {
+                const timeStr = new Date(post.scheduledTime).toLocaleString();
+                const platformsBadges = post.platforms.map(plat => `<span style="font-size: 9px; padding: 1px 4px; background: var(--panel-2); border-radius: 4px; color: var(--muted); margin-right: 4px;">${plat}</span>`).join('');
+                return `
+                    <div style="background: var(--panel-1); border: 1px solid var(--border); padding: 12px; border-radius: 6px; position: relative;">
+                        <p style="font-size: 12px; margin: 0 0 8px 0; font-weight: 500; line-height: 1.4;">${escapeHtml(post.text)}</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                ${platformsBadges}
+                                <span style="font-size: 9px; color: var(--muted);"><i class="fa-solid fa-clock"></i> ${timeStr}</span>
+                            </div>
+                            <button class="btn btn-danger btn-cancel-post" data-id="${post.id}" style="padding: 2px 8px; font-size: 10px; height: auto;"><i class="fa-solid fa-trash-can"></i> Cancel</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        if (published.length === 0) {
+            publishedPostsList.innerHTML = `<p style="font-size: 12px; color: var(--muted); text-align: center; margin: 20px 0;">No organic posts published yet.</p>`;
+        } else {
+            published.sort((a, b) => new Date(b.scheduledTime) - new Date(a.scheduledTime));
+            publishedPostsList.innerHTML = published.map(post => {
+                const timeStr = new Date(post.scheduledTime).toLocaleString();
+                const platformsBadges = post.platforms.map(plat => `<span style="font-size: 9px; padding: 1px 4px; background: rgba(54, 194, 147, 0.15); border-radius: 4px; color: #36c293; margin-right: 4px;">${plat}</span>`).join('');
+                return `
+                    <div style="background: var(--panel-1); border: 1px solid var(--border); padding: 12px; border-radius: 6px; opacity: 0.85;">
+                        <p style="font-size: 12px; margin: 0 0 8px 0; font-weight: 500; line-height: 1.4;">${escapeHtml(post.text)}</p>
+                        <div>
+                             ${platformsBadges}
+                             <span style="font-size: 9px; color: #36c293;"><i class="fa-solid fa-square-check"></i> Published ${timeStr}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        document.querySelectorAll('.btn-cancel-post').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const postId = btn.getAttribute('data-id');
+                showActionStatus('Cancelling scheduled post...');
+                try {
+                    await apiFetch(`/api/scheduled-posts/${encodeURIComponent(postId)}`, {
+                        method: 'DELETE'
+                    });
+                    showActionStatus('Post cancelled and removed from queue.');
+                    await loadApiState();
+                } catch (e) {
+                    showActionStatus(`Failed to cancel: ${e.message}`, 'error');
+                }
+            });
+        });
     }
 
     function renderLeadsTable() {
@@ -1072,23 +1143,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadApiState() {
         try {
-            const [status, triggers, flows, conversations, conversions, contentRequests] = await Promise.all([
+            const [status, triggers, flows, conversations, conversions, contentRequests, scheduledPosts] = await Promise.all([
                 apiFetch('/api/status'),
                 apiFetch('/api/triggers'),
                 apiFetch('/api/flows'),
                 apiFetch('/api/conversations'),
                 apiFetch('/api/conversions'),
-                apiFetch('/api/content-requests')
+                apiFetch('/api/content-requests'),
+                apiFetch('/api/scheduled-posts')
             ]);
             statusData = status;
             triggersData = triggers;
             flowCatalog = flows;
             conversionsData = conversions;
             contentRequestsData = contentRequests;
+            scheduledPostsData = scheduledPosts;
             chatsData = Object.fromEntries(conversations.map((chat) => [chat.id, chat]));
             activeChatId = conversations[0]?.id || activeChatId;
             renderConversationList();
             renderLeadsTable();
+            renderScheduledPosts(scheduledPostsData);
             renderMessages(activeChatId);
             updateProfilePanel(activeChatId);
             renderAnalyticsOverview();
@@ -1291,6 +1365,58 @@ document.addEventListener('DOMContentLoaded', () => {
                 showActionStatus('API configurations updated successfully.');
             } catch (error) {
                 showActionStatus(`Failed to save config: ${error.message}`, 'error');
+            }
+        });
+    }
+
+    // Schedule organic post trigger
+    if (btnSchedulePost) {
+        if (schedPostTime) {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() + 5);
+            const iso = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            schedPostTime.value = iso;
+        }
+
+        btnSchedulePost.addEventListener('click', async () => {
+            const text = schedPostText.value.trim();
+            if (!text) {
+                alert('Please write post content first.');
+                return;
+            }
+            
+            const platforms = [];
+            document.querySelectorAll('input[name="sched-platform"]:checked').forEach(cb => {
+                platforms.push(cb.value);
+            });
+            if (platforms.length === 0) {
+                alert('Please select at least one platform.');
+                return;
+            }
+
+            const timeVal = schedPostTime.value;
+            if (!timeVal) {
+                alert('Please pick a publication time.');
+                return;
+            }
+            
+            const scheduledTime = new Date(timeVal).toISOString();
+
+            showActionStatus('Scheduling organic publication...');
+            try {
+                await apiFetch('/api/scheduled-posts', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        text,
+                        platforms,
+                        scheduledTime
+                    })
+                });
+                showActionStatus('Publication queued successfully.');
+                schedPostText.value = '';
+                await loadApiState();
+            } catch (error) {
+                showActionStatus(`Failed to queue: ${error.message}`, 'error');
             }
         });
     }

@@ -236,6 +236,7 @@ function ensureCollections(state) {
   state.drafts ||= [];
   state.leads ||= [];
   state.short_links ||= [];
+  state.scheduled_posts ||= [];
   return state;
 }
 
@@ -751,6 +752,36 @@ async function handleApi(req, res, url) {
     return sendJson(res, 201, contentRequest);
   }
 
+  if (req.method === "GET" && url.pathname === "/api/scheduled-posts") {
+    return sendJson(res, 200, state.scheduled_posts);
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/scheduled-posts") {
+    const payload = await readJsonBody(req);
+    const post = {
+      id: `post_${randomUUID()}`,
+      text: String(payload.text || "").trim(),
+      platforms: Array.isArray(payload.platforms) ? payload.platforms : ["Instagram"],
+      scheduledTime: String(payload.scheduledTime || new Date().toISOString()),
+      status: "scheduled",
+      created_at: new Date().toISOString()
+    };
+    if (!post.text) return sendError(res, 400, "text is required");
+    state.scheduled_posts.push(post);
+    await writeState(state);
+    return sendJson(res, 201, post);
+  }
+
+  const deletePostMatch = url.pathname.match(/^\/api\/scheduled-posts\/([^/]+)$/);
+  if (req.method === "DELETE" && deletePostMatch) {
+    const postId = decodeURIComponent(deletePostMatch[1]);
+    const idx = state.scheduled_posts.findIndex(p => p.id === postId);
+    if (idx < 0) return sendError(res, 404, "post not found");
+    const deleted = state.scheduled_posts.splice(idx, 1)[0];
+    await writeState(state);
+    return sendJson(res, 200, deleted);
+  }
+
   if (req.method === "GET" && url.pathname === "/api/smm/exports") {
     return sendJson(res, 200, buildSmmExports(state));
   }
@@ -1062,6 +1093,29 @@ server.on("upgrade", (request, socket, head) => {
     wss.emit("connection", ws, request);
   });
 });
+
+// Post Publisher Scheduler Loop (10 seconds)
+setInterval(async () => {
+  try {
+    const state = ensureCollections(await readState());
+    const nowStr = new Date().toISOString();
+    let updated = false;
+
+    state.scheduled_posts.forEach((post) => {
+      if (post.status === "scheduled" && post.scheduledTime <= nowStr) {
+        post.status = "published";
+        updated = true;
+        console.log(`[PUBLISHER] Organic Post Published to ${post.platforms.join(" & ")}: "${post.text}"`);
+      }
+    });
+
+    if (updated) {
+      await writeState(state);
+    }
+  } catch (error) {
+    console.error("[PUBLISHER ERROR]", error);
+  }
+}, 10000);
 
 server.listen(PORT, () => {
   console.log(`Message Manager running at http://localhost:${PORT}`);

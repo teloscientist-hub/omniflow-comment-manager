@@ -53,6 +53,10 @@
                     <i class="fa-solid fa-circle-nodes"></i>
                     <span>API Connectors</span>
                 </button>
+                <button class="nav-item" data-tab="post-scheduler">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <span>Post Scheduler</span>
+                </button>
             </nav>
             
             <div class="sidebar-footer">
@@ -774,6 +778,76 @@
 
                 <div style="display: flex; justify-content: flex-end; margin-top: 24px;">
                     <button class="btn btn-primary" id="btn-save-connectors"><i class="fa-solid fa-cloud-arrow-up"></i> Save API Configurations</button>
+                </div>
+            </section>
+
+            <!-- Tab Content Pane: Post Scheduler -->
+            <section class="tab-pane" id="post-scheduler-pane">
+                <div class="pane-header">
+                    <div>
+                        <h1>Post Scheduler & Organic Publisher</h1>
+                        <p>Schedule organic social updates and stagger dispatches across Instagram, Facebook, and TikTok channels.</p>
+                    </div>
+                </div>
+
+                <div class="split-view" style="display: flex; gap: 24px; min-height: 500px;">
+                    <!-- Composer Form Column -->
+                    <div class="glass-card" style="flex: 1; padding: 24px; display: flex; flex-direction: column; gap: 16px; height: fit-content;">
+                        <h3 style="color: var(--accent); margin-bottom: 8px;"><i class="fa-solid fa-pen-to-square"></i> Compose Scheduled Post</h3>
+                        
+                        <div class="form-group">
+                            <label style="font-size: 11px; font-weight: 600; color: var(--text); display: block; margin-bottom: 6px;">Post Body Content</label>
+                            <textarea id="sched-post-text" placeholder="Write your organic social post content here..." style="width: 100%; height: 120px; padding: 10px; background: var(--panel-1); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 13px; font-family: inherit; resize: vertical;"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label style="font-size: 11px; font-weight: 600; color: var(--text); display: block; margin-bottom: 6px;">Select Platforms</label>
+                            <div style="display: flex; gap: 16px; margin-top: 4px;">
+                                <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer;">
+                                    <input type="checkbox" name="sched-platform" value="Instagram" checked style="width: auto;">
+                                    <i class="fa-brands fa-instagram" style="color: var(--accent);"></i> Instagram
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer;">
+                                    <input type="checkbox" name="sched-platform" value="Facebook" style="width: auto;">
+                                    <i class="fa-brands fa-facebook" style="color: #1877f2;"></i> Facebook
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer;">
+                                    <input type="checkbox" name="sched-platform" value="TikTok" style="width: auto;">
+                                    <i class="fa-brands fa-tiktok" style="color: #010101;"></i> TikTok
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label style="font-size: 11px; font-weight: 600; color: var(--text); display: block; margin-bottom: 6px;">Release Publication Time (UTC)</label>
+                            <input type="datetime-local" id="sched-post-time" style="width: 100%; padding: 8px 12px; background: var(--panel-1); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 13px;">
+                        </div>
+
+                        <button class="btn btn-primary" id="btn-schedule-post" style="margin-top: 12px; width: 100%;"><i class="fa-solid fa-clock"></i> Queue Scheduled Publication</button>
+                    </div>
+
+                    <!-- Queue Feeds Columns -->
+                    <div style="flex: 1.5; display: flex; flex-direction: column; gap: 20px;">
+                        <!-- Upcoming Queue -->
+                        <div class="glass-card" style="padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+                            <h3 style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 8px; margin: 0;">
+                                <i class="fa-solid fa-list-check" style="color: var(--accent);"></i> Upcoming Queue
+                            </h3>
+                            <div id="scheduled-posts-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 240px; overflow-y: auto;">
+                                <p style="font-size: 12px; color: var(--muted); text-align: center; margin: 20px 0;">No posts currently scheduled.</p>
+                            </div>
+                        </div>
+
+                        <!-- Published History -->
+                        <div class="glass-card" style="padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+                            <h3 style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 8px; margin: 0;">
+                                <i class="fa-solid fa-square-check" style="color: #36c293;"></i> Published History
+                            </h3>
+                            <div id="published-posts-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 240px; overflow-y: auto;">
+                                <p style="font-size: 12px; color: var(--muted); text-align: center; margin: 20px 0;">No organic posts published yet.</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
         </main>
