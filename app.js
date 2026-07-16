@@ -611,14 +611,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     statusSpan.style.fontSize = '10px';
                     statusSpan.style.verticalAlign = 'middle';
                     
+                    let channelIcon = '';
+                    if (msg.channelType === 'whatsapp') {
+                        channelIcon = '<i class="fa-brands fa-whatsapp" style="color: #25d366; margin-right: 4px;" title="Dispatched over WhatsApp Cloud API"></i>';
+                    } else if (msg.channelType === 'sms') {
+                        channelIcon = '<i class="fa-solid fa-mobile-screen-button" style="color: #3b82f6; margin-right: 4px;" title="Dispatched over Twilio SMS gateway"></i>';
+                    }
+
                     const status = msg.status || 'delivered';
                     if (status === 'sent') {
-                        statusSpan.innerHTML = '<i class="fa-solid fa-check" style="color: var(--muted);" title="Sent to provider"></i>';
+                        statusSpan.innerHTML = `${channelIcon}<i class="fa-solid fa-check" style="color: var(--muted);" title="Sent to provider"></i>`;
                     } else if (status === 'delivered') {
-                        statusSpan.innerHTML = '<i class="fa-solid fa-check-double" style="color: #36c293;" title="Delivered successfully"></i>';
+                        statusSpan.innerHTML = `${channelIcon}<i class="fa-solid fa-check-double" style="color: #36c293;" title="Delivered successfully"></i>`;
                     } else if (status === 'failed') {
                         const err = msg.error_code ? ` (Error ${msg.error_code}: Carrier Block)` : '';
-                        statusSpan.innerHTML = `<i class="fa-solid fa-circle-exclamation" style="color: #ef4444;" title="Delivery Failed${err}"></i>`;
+                        statusSpan.innerHTML = `${channelIcon}<i class="fa-solid fa-circle-exclamation" style="color: #ef4444;" title="Delivery Failed${err}"></i>`;
                     }
                     time.appendChild(statusSpan);
                 }

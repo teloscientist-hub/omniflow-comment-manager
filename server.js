@@ -103,10 +103,12 @@ function normalizeMessage(payload) {
   const text = String(payload.text || "").trim();
   if (!text) throw new Error("text is required");
   return {
+    id: payload.id || `msg_${randomUUID()}`,
     type: payload.type === "incoming" ? "incoming" : "outgoing",
     text,
     time: payload.time || new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     isAI: Boolean(payload.isAI),
+    status: payload.status || "sent"
   };
 }
 
@@ -497,6 +499,30 @@ async function handleApi(req, res, url) {
             timestamp: new Date().toISOString()
           });
         }
+
+        // Immediate fallback trigger on error callback
+        if (foundMessage.channelType === "whatsapp" && !foundMessage.fallback_triggered) {
+          foundMessage.fallback_triggered = true;
+          foundMessage.channelType = "sms";
+          foundMessage.status = "sent";
+          
+          foundConversation.messages.push({
+            id: `sys_${randomUUID()}`,
+            type: "system",
+            text: "WhatsApp delivery failed immediately. Automatically fell back to Twilio SMS."
+          });
+          
+          if (lead) {
+            lead.timeline.push({
+              event: "Channel Fallback",
+              detail: `Immediate WhatsApp failure callback (Error ${errorCode}) on message ${messageId}. Fell back to Twilio SMS.`,
+              timestamp: new Date().toISOString()
+            });
+          }
+          
+          // Trigger WS UI refresh
+          broadcastTypingUpdate(foundConversation.id);
+        }
       }
       await writeState(state);
     }
@@ -853,6 +879,12 @@ async function handleApi(req, res, url) {
 
     const payload = await readJsonBody(req);
     const message = normalizeMessage(payload);
+    
+    if (message.type === "outgoing" && (conversation.platform === "SMS Messaging" || conversation.platform === "WhatsApp Business" || conversation.channel === "sms")) {
+      message.channelType = "whatsapp";
+      registerOutboundFallback(conversation.id, message.id);
+    }
+
     conversation.messages.push(message);
     conversation.lastActivity = "now";
 
@@ -936,6 +968,12 @@ async function handleApi(req, res, url) {
       isAI: true,
       status: "sent"
     };
+
+    if (conversation.platform === "SMS Messaging" || conversation.platform === "WhatsApp Business" || conversation.channel === "sms") {
+      message.channelType = "whatsapp";
+      registerOutboundFallback(conversation.id, messageId);
+    }
+
     conversation.messages.push(message);
     conversation.lastActivity = "now";
     
@@ -1125,6 +1163,44 @@ function broadcastTypingUpdate(chatId) {
       }
     }
   });
+}
+
+function registerOutboundFallback(conversationId, messageId) {
+  setTimeout(async () => {
+    try {
+      const state = ensureCollections(await readState());
+      const conv = state.conversations.find(c => c.id === conversationId);
+      if (!conv) return;
+      const msg = conv.messages.find(m => m.id === messageId);
+      if (!msg) return;
+
+      if (msg.type === "outgoing" && msg.channelType === "whatsapp" && msg.status !== "delivered" && msg.status !== "read" && !msg.fallback_triggered) {
+        msg.fallback_triggered = true;
+        msg.channelType = "sms";
+        msg.status = "sent";
+
+        conv.messages.push({
+          id: `sys_${randomUUID()}`,
+          type: "system",
+          text: "WhatsApp delivery failed. Automatically fell back to Twilio SMS."
+        });
+
+        const lead = state.leads.find(l => l.id === conv.lead_id);
+        if (lead) {
+          lead.timeline.push({
+            event: "Channel Fallback",
+            detail: `WhatsApp delivery timeout (5s) on message ${messageId}. Fell back to Twilio SMS.`,
+            timestamp: new Date().toISOString()
+          });
+        }
+
+        await writeState(state);
+        broadcastTypingUpdate(conversationId);
+      }
+    } catch (e) {
+      console.error("[FALLBACK TIMER ERROR]", e);
+    }
+  }, 5000);
 }
 
 server.on("upgrade", (request, socket, head) => {
