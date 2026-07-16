@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-16T12:26:51.369Z",
+  "generated_at": "2026-07-16T16:47:09.526Z",
   "flows": [
     {
       "id": "flow_mml_growth_book_v2",
@@ -79,7 +79,8 @@
           "time": "05:26 AM",
           "isAI": true
         }
-      ]
+      ],
+      "lead_id": "lead_b36121e5-a172-4a14-ae79-00c63ad6202e"
     },
     {
       "id": "chat-2",
@@ -98,7 +99,9 @@
       "tags": [
         "WhatsApp Lead",
         "Broadcasting",
-        "Enriched"
+        "Enriched",
+        "Website Visitor",
+        "Support Chat"
       ],
       "attribution": {
         "origin_post_id": null,
@@ -125,7 +128,8 @@
           "text": "What are the pricing options for the package?",
           "time": "10:06 AM"
         }
-      ]
+      ],
+      "lead_id": "lead_57be83d9-1c3b-4788-8402-64f3a3a7888c"
     },
     {
       "id": "chat-3",
@@ -177,7 +181,8 @@
           "time": "07:46 AM",
           "isAI": false
         }
-      ]
+      ],
+      "lead_id": "lead_b36121e5-a172-4a14-ae79-00c63ad6202e"
     },
     {
       "id": "chat-4",
@@ -222,7 +227,8 @@
           "text": "Thank you, that solved my issue!",
           "time": "Yesterday"
         }
-      ]
+      ],
+      "lead_id": "lead_57be83d9-1c3b-4788-8402-64f3a3a7888c"
     }
   ],
   "conversions": [],
@@ -240,5 +246,103 @@
       "created_at": "2026-06-30T00:00:00.000Z"
     }
   ],
-  "drafts": []
+  "drafts": [],
+  "leads": [
+    {
+      "id": "lead_b36121e5-a172-4a14-ae79-00c63ad6202e",
+      "full_name": "John Doe",
+      "email": "john.doe@gmail.com",
+      "phone": "+1 (415) 382-9021",
+      "location": "San Francisco, CA",
+      "tags": [
+        "Instagram Lead",
+        "E-commerce Quiz",
+        "Enriched",
+        "SMS Lead",
+        "Promo Code",
+        "Converted"
+      ],
+      "channels": [
+        {
+          "platform": "Instagram Direct",
+          "handle": "johndoe_creative"
+        },
+        {
+          "platform": "SMS Messaging",
+          "handle": "+1 (310) 902-1244"
+        }
+      ],
+      "attribution": {
+        "origin_post_id": "ig_post_demo_004",
+        "origin_source_id": "youtube-demo-growth-strategy",
+        "trigger_keyword": "YES",
+        "flow_id": "flow_mml_growth_book_v2",
+        "flow_name": "MML Growth Book Flow",
+        "revenue_usd": 97
+      },
+      "timeline": [
+        {
+          "event": "Lead profile created",
+          "detail": "Initial contact on Instagram Direct (johndoe_creative)",
+          "timestamp": "2026-07-16T16:47:07.755Z"
+        },
+        {
+          "event": "Profiles Merged",
+          "detail": "Merged secondary profile Alex Rivera (lead_b3d886f7-390a-418f-baf1-8075d514d041)",
+          "timestamp": "2026-07-16T16:47:09.525Z"
+        },
+        {
+          "event": "Lead profile created",
+          "detail": "Initial contact on SMS Messaging (+1 (310) 902-1244)",
+          "timestamp": "2026-07-16T16:47:07.756Z"
+        }
+      ],
+      "created_at": "2026-07-16T16:47:07.756Z"
+    },
+    {
+      "id": "lead_57be83d9-1c3b-4788-8402-64f3a3a7888c",
+      "full_name": "Sarah Jenkins",
+      "email": "s.jenkins@outlook.com",
+      "phone": "+1 (555) 381-9921",
+      "location": "New York, NY",
+      "tags": [
+        "WhatsApp Lead",
+        "Broadcasting",
+        "Enriched",
+        "Website Visitor",
+        "Support Chat"
+      ],
+      "channels": [
+        {
+          "platform": "WhatsApp Business",
+          "handle": "+1 (555) 381-9921"
+        },
+        {
+          "platform": "Web Live Chat",
+          "handle": "Sarah Jenkins (Web)"
+        }
+      ],
+      "attribution": {
+        "origin_post_id": null,
+        "origin_source_id": null,
+        "trigger_keyword": "CHECKLIST",
+        "flow_id": "flow_lead_magnet_checklist",
+        "flow_name": "Free PDF Checklist Flow",
+        "revenue_usd": 0
+      },
+      "timeline": [
+        {
+          "event": "Lead profile created",
+          "detail": "Initial contact on WhatsApp Business (+1 (555) 381-9921)",
+          "timestamp": "2026-07-16T16:47:07.756Z"
+        },
+        {
+          "event": "Linked channel",
+          "detail": "Connected Web Live Chat handle @Sarah Jenkins (Web)",
+          "timestamp": "2026-07-16T16:47:07.756Z"
+        }
+      ],
+      "created_at": "2026-07-16T16:47:07.756Z"
+    }
+  ]
 }

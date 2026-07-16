@@ -129,12 +129,91 @@ function normalizeContentRequest(payload) {
   };
 }
 
+function resolveLeadForConversation(state, conversation) {
+  state.leads ||= [];
+  
+  let lead = null;
+  const email = (conversation.email || "").trim().toLowerCase();
+  const phone = (conversation.phone || "").trim();
+  const handle = (conversation.name || "").trim();
+  const platform = conversation.platform;
+  
+  if (email) {
+    lead = state.leads.find(l => l.email && l.email.toLowerCase() === email);
+  }
+  if (!lead && phone) {
+    lead = state.leads.find(l => l.phone && l.phone === phone);
+  }
+  if (!lead && handle) {
+    lead = state.leads.find(l => l.channels && l.channels.some(c => c.platform === platform && c.handle === handle));
+  }
+  
+  if (!lead) {
+    lead = {
+      id: `lead_${randomUUID()}`,
+      full_name: conversation.fullName || conversation.name,
+      email: conversation.email || null,
+      phone: conversation.phone || null,
+      location: conversation.location || null,
+      tags: conversation.tags || [],
+      channels: [{ platform, handle }],
+      attribution: conversation.attribution || {},
+      timeline: [
+        {
+          event: "Lead profile created",
+          detail: `Initial contact on ${platform} (${handle})`,
+          timestamp: new Date().toISOString()
+        }
+      ],
+      created_at: new Date().toISOString()
+    };
+    state.leads.push(lead);
+  } else {
+    if (!lead.email && conversation.email) {
+      lead.email = conversation.email;
+      lead.timeline.push({
+        event: "Email resolved",
+        detail: `Added email: ${conversation.email}`,
+        timestamp: new Date().toISOString()
+      });
+    }
+    if (!lead.phone && conversation.phone) {
+      lead.phone = conversation.phone;
+      lead.timeline.push({
+        event: "Phone resolved",
+        detail: `Added phone: ${conversation.phone}`,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    const channelExists = lead.channels.some(c => c.platform === platform && c.handle === handle);
+    if (!channelExists) {
+      lead.channels.push({ platform, handle });
+      lead.timeline.push({
+        event: "Linked channel",
+        detail: `Connected ${platform} handle @${handle}`,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    if (conversation.tags) {
+      conversation.tags.forEach(t => {
+        if (!lead.tags.includes(t)) lead.tags.push(t);
+      });
+    }
+  }
+  
+  conversation.lead_id = lead.id;
+  return lead;
+}
+
 function ensureCollections(state) {
   state.triggers ||= [];
   state.conversations ||= [];
   state.conversions ||= [];
   state.content_requests ||= [];
   state.drafts ||= [];
+  state.leads ||= [];
   return state;
 }
 
@@ -216,6 +295,19 @@ async function writeSmmExports(state) {
 
 async function handleApi(req, res, url) {
   const state = ensureCollections(await readState());
+
+  let stateModified = false;
+  if (state.conversations) {
+    state.conversations.forEach(c => {
+      if (!c.lead_id) {
+        resolveLeadForConversation(state, c);
+        stateModified = true;
+      }
+    });
+  }
+  if (stateModified) {
+    await writeState(state);
+  }
 
   if (req.method === "GET" && url.pathname === "/api/status") {
     return sendJson(res, 200, {
@@ -307,6 +399,69 @@ async function handleApi(req, res, url) {
 
     await writeState(state);
     return sendJson(res, 201, trigger);
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/leads") {
+    return sendJson(res, 200, state.leads);
+  }
+
+  if (req.method === "GET" && url.pathname.startsWith("/api/leads/")) {
+    const id = url.pathname.split("/").pop();
+    const lead = state.leads.find((item) => item.id === id);
+    if (!lead) return sendError(res, 404, "lead not found");
+    return sendJson(res, 200, lead);
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/leads/merge") {
+    const payload = await readJsonBody(req);
+    const primaryId = payload.primary_lead_id;
+    const secondaryId = payload.secondary_lead_id;
+    
+    if (!primaryId || !secondaryId) {
+      return sendError(res, 400, "primary_lead_id and secondary_lead_id are required");
+    }
+    
+    const primaryIndex = state.leads.findIndex(l => l.id === primaryId);
+    const secondaryIndex = state.leads.findIndex(l => l.id === secondaryId);
+    
+    if (primaryIndex < 0 || secondaryIndex < 0) {
+      return sendError(res, 404, "One or both leads not found");
+    }
+    
+    const primaryLead = state.leads[primaryIndex];
+    const secondaryLead = state.leads.splice(secondaryIndex, 1)[0];
+    
+    secondaryLead.channels.forEach(ch => {
+      if (!primaryLead.channels.some(pc => pc.platform === ch.platform && pc.handle === ch.handle)) {
+        primaryLead.channels.push(ch);
+      }
+    });
+    
+    secondaryLead.tags.forEach(tag => {
+      if (!primaryLead.tags.includes(tag)) {
+        primaryLead.tags.push(tag);
+      }
+    });
+    
+    if (!primaryLead.email) primaryLead.email = secondaryLead.email;
+    if (!primaryLead.phone) primaryLead.phone = secondaryLead.phone;
+    if (!primaryLead.location) primaryLead.location = secondaryLead.location;
+    
+    primaryLead.timeline.push({
+      event: "Profiles Merged",
+      detail: `Merged secondary profile ${secondaryLead.full_name} (${secondaryLead.id})`,
+      timestamp: new Date().toISOString()
+    });
+    primaryLead.timeline = primaryLead.timeline.concat(secondaryLead.timeline || []);
+    
+    state.conversations.forEach(c => {
+      if (c.lead_id === secondaryId) {
+        c.lead_id = primaryId;
+      }
+    });
+    
+    await writeState(state);
+    return sendJson(res, 200, primaryLead);
   }
 
   if (req.method === "GET" && url.pathname === "/api/conversations") {

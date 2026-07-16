@@ -223,6 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnSaveDraftEdit = document.getElementById('btn-save-draft-edit');
     const btnApproveDraft = document.getElementById('btn-approve-draft');
     const draftTimeMeta = document.getElementById('draft-time-meta');
+    const profileTimelineContainer = document.getElementById('profile-timeline-container');
     let activeDraft = null;
     
     // Profile Panel Elements
@@ -437,6 +438,32 @@ document.addEventListener('DOMContentLoaded', () => {
         addTagSpan.className = 'tag-pill';
         addTagSpan.textContent = '+ Add Tag';
         tagCloud.appendChild(addTagSpan);
+
+        // Render Lead Activity Timeline
+        if (profileTimelineContainer) {
+            profileTimelineContainer.innerHTML = '';
+            if (chat.lead_id) {
+                apiFetch(`/api/leads/${chat.lead_id}`).then(lead => {
+                    if (lead && lead.timeline && lead.timeline.length > 0) {
+                        profileTimelineContainer.innerHTML = lead.timeline.map(item => `
+                            <div style="border-left: 2px solid var(--accent); padding-left: 8px; position: relative;">
+                                <span style="position: absolute; left: -5px; top: 3px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent);"></span>
+                                <div style="font-weight: 600; color: var(--text);">${escapeHtml(item.event)}</div>
+                                <div style="color: var(--muted); margin-top: 2px;">${escapeHtml(item.detail)}</div>
+                                <div style="font-size: 9px; color: var(--muted); margin-top: 2px;">${item.timestamp ? item.timestamp.slice(11, 16) : 'now'} UTC</div>
+                            </div>
+                        `).join('');
+                    } else {
+                        profileTimelineContainer.innerHTML = '<div style="color: var(--muted); font-style: italic;">No timeline events recorded.</div>';
+                    }
+                }).catch(err => {
+                    console.error('Error fetching lead timeline:', err);
+                    profileTimelineContainer.innerHTML = '<div style="color: var(--muted); font-style: italic;">Failed to load lead timeline.</div>';
+                });
+            } else {
+                profileTimelineContainer.innerHTML = '<div style="color: var(--muted); font-style: italic;">Resolving profile...</div>';
+            }
+        }
     }
 
     // Conversation list item clicks
