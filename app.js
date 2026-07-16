@@ -198,6 +198,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleAiBtn = document.getElementById('toggle-ai');
     const complianceBlockBanner = document.getElementById('compliance-block-banner');
     const verifiedSmsBadge = document.getElementById('verified-sms-badge');
+    const agentCollisionBanner = document.getElementById('agent-collision-banner');
+    const collidingAgentsList = document.getElementById('colliding-agents-list');
     const logContentRequestBtn = document.getElementById('log-content-request');
     const recordConversionBtn = document.getElementById('record-conversion');
     const leadsTableBody = document.getElementById('leads-table-body');
@@ -352,11 +354,92 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // -------------------------------------------------------------
+    // WebSocket Client & Operator Collision Guard
+    // -------------------------------------------------------------
+    const wsProto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${wsProto}//${location.host}`;
+    let socket;
+    let typingTimeout;
+    let isLocallyTyping = false;
+    const currentOperator = document.querySelector('.user-info h4')?.textContent?.trim() || 'Mark Lewis';
+
+    function connectWebSocket() {
+        socket = new WebSocket(wsUrl);
+        socket.onopen = () => {
+            console.log("WebSocket connected.");
+            joinWebSocketThread();
+        };
+        socket.onmessage = (event) => {
+            try {
+                const msg = JSON.parse(event.data);
+                if (msg.type === 'typing-update') {
+                    handleTypingUpdate(msg);
+                }
+            } catch (e) {
+                console.error("WS client msg error:", e);
+            }
+        };
+        socket.onclose = () => {
+            console.log("WebSocket disconnected. Reconnecting in 3s...");
+            setTimeout(connectWebSocket, 3000);
+        };
+    }
+
+    function joinWebSocketThread() {
+        if (socket && socket.readyState === WebSocket.OPEN && activeChatId) {
+            socket.send(JSON.stringify({
+                type: 'join-thread',
+                chatId: activeChatId
+            }));
+        }
+    }
+
+    function sendTypingSignal(isTyping) {
+        if (socket && socket.readyState === WebSocket.OPEN && activeChatId) {
+            socket.send(JSON.stringify({
+                type: 'typing',
+                chatId: activeChatId,
+                isTyping: isTyping,
+                operator: currentOperator
+            }));
+        }
+    }
+
+    function handleTypingUpdate(msg) {
+        if (msg.chatId !== activeChatId) return;
+        
+        const otherOperators = msg.operators.filter(op => op !== currentOperator);
+        
+        if (msg.isTyping && otherOperators.length > 0) {
+            if (collidingAgentsList) collidingAgentsList.textContent = otherOperators.join(', ');
+            if (agentCollisionBanner) agentCollisionBanner.style.display = 'flex';
+            
+            chatInput.disabled = true;
+            sendBtn.disabled = true;
+            chatInput.placeholder = `Locked: ${otherOperators.join(', ')} is currently typing...`;
+        } else {
+            if (agentCollisionBanner) agentCollisionBanner.style.display = 'none';
+            
+            const chat = chatsData[activeChatId];
+            if (chat && !chat.opted_out) {
+                chatInput.disabled = false;
+                sendBtn.disabled = false;
+                chatInput.placeholder = isAiPaused ? 'Type a message (Human takeover active)...' : 'Type a message (AI is currently handling)...';
+            }
+        }
+    }
+
+    // Call WebSocket connection
+    connectWebSocket();
+
     // Function to render messages for active chat
     function renderMessages(chatId) {
         messagesContainer.innerHTML = '';
         const chat = chatsData[chatId];
         if (!chat) return;
+
+        joinWebSocketThread();
         
         if (chat.opted_out) {
             if (complianceBlockBanner) complianceBlockBanner.style.display = 'flex';
@@ -592,6 +675,20 @@ document.addEventListener('DOMContentLoaded', () => {
     sendBtn.addEventListener('click', sendMessage);
     chatInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendMessage();
+    });
+
+    chatInput.addEventListener('input', () => {
+        if (chatInput.disabled) return;
+        if (!isLocallyTyping) {
+            isLocallyTyping = true;
+            sendTypingSignal(true);
+        }
+        
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+            isLocallyTyping = false;
+            sendTypingSignal(false);
+        }, 2500);
     });
 
     // Toggle AI Handled State

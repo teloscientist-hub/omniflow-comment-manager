@@ -364,6 +364,11 @@
                             <i class="fa-solid fa-circle-exclamation"></i> Outbound Block Active: This lead has opted out of communications (STOP). Outgoing messages are disabled.
                         </div>
 
+                        <!-- Agent Collision Warning Banner -->
+                        <div id="agent-collision-banner" style="display: none; padding: 10px 16px; background: rgba(245, 158, 11, 0.1); border-bottom: 1px solid rgba(245, 158, 11, 0.2); color: #f59e0b; font-size: 12px; font-weight: 600; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-triangle-exclamation"></i> Collision Warning: <span id="colliding-agents-list">Operator</span> is currently typing a reply on this thread. Input locked.
+                        </div>
+
                         <!-- Chat Messages Scroller -->
                         <div class="messages-area" id="messages-container">
                             <div class="msg-group incoming">

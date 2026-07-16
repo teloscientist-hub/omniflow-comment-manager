@@ -2,6 +2,7 @@ const http = require("http");
 const fs = require("fs/promises");
 const path = require("path");
 const { randomUUID } = require("crypto");
+const WebSocket = require("ws");
 const exchange = require("../_shared/exchange/exchange.js");
 
 const ROOT = __dirname;
@@ -975,6 +976,91 @@ const server = http.createServer(async (req, res) => {
     const status = error instanceof SyntaxError ? 400 : 500;
     sendError(res, status, error.message || "server error");
   }
+});
+
+const wss = new WebSocket.Server({ noServer: true });
+const clientThreads = new Map();
+const activeTyping = new Map();
+
+wss.on("connection", (ws) => {
+  ws.on("message", (messageStr) => {
+    try {
+      const msg = JSON.parse(messageStr);
+      if (msg.type === "join-thread") {
+        clientThreads.set(ws, msg.chatId);
+        
+        const typists = activeTyping.get(msg.chatId);
+        if (typists && typists.size > 0) {
+          ws.send(JSON.stringify({
+            type: "typing-update",
+            chatId: msg.chatId,
+            isTyping: true,
+            operators: Array.from(typists.keys())
+          }));
+        }
+      } else if (msg.type === "typing") {
+        const { chatId, isTyping, operator } = msg;
+        
+        let typists = activeTyping.get(chatId);
+        if (!typists) {
+          typists = new Map();
+          activeTyping.set(chatId, typists);
+        }
+        
+        if (isTyping) {
+          if (typists.has(operator)) {
+            clearTimeout(typists.get(operator));
+          }
+          const timeout = setTimeout(() => {
+            const currentTypists = activeTyping.get(chatId);
+            if (currentTypists) {
+              currentTypists.delete(operator);
+              broadcastTypingUpdate(chatId);
+            }
+          }, 4000);
+          typists.set(operator, timeout);
+        } else {
+          if (typists.has(operator)) {
+            clearTimeout(typists.get(operator));
+            typists.delete(operator);
+          }
+        }
+        
+        broadcastTypingUpdate(chatId);
+      }
+    } catch (e) {
+      console.error("[WS MESSAGE ERROR]", e);
+    }
+  });
+
+  ws.on("close", () => {
+    clientThreads.delete(ws);
+  });
+});
+
+function broadcastTypingUpdate(chatId) {
+  const typists = activeTyping.get(chatId);
+  const operatorList = typists ? Array.from(typists.keys()) : [];
+  const payload = JSON.stringify({
+    type: "typing-update",
+    chatId: chatId,
+    isTyping: operatorList.length > 0,
+    operators: operatorList
+  });
+  
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      if (clientThreads.get(client) === chatId) {
+        client.send(payload);
+      }
+    }
+  });
+}
+
+server.on("upgrade", (request, socket, head) => {
+  wss.handleUpgrade(request, socket, head, (ws) => {
+    wss.emit("connection", ws, request);
+  });
 });
 
 server.listen(PORT, () => {

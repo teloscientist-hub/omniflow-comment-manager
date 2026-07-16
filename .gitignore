@@ -1,0 +1,4 @@
+node_modules/
+package-lock.json
+data/connector-credentials.json
+.DS_Store
